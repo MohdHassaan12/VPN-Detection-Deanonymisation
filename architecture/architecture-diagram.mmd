@@ -1,0 +1,16 @@
+graph TD
+  A[User Request]
+  A --> L1[Layer 1: Edge Firewall\n- IP intelligence (IPQualityScore, IPinfo, IP2Proxy)\n- MTU/MSS fingerprint\n- Fast pass/block]
+  L1 --> L2[Layer 2: Load Balancer (TLS Termination)\n- Controlled TLS decryption\n- Metadata: SNI, RTT, JA3]
+
+  subgraph L3G[Layer 3: ML Risk Scoring Engine]
+    S1[Stage 1: CNN App Classifier\nInput: 64x64x3 Packet Block Image\nOutput: App_Class]
+    S2[Stage 2: XGBoost / RandomForest Intent Classifier\nInput: 25+ features + App_Class\nOutput: Risk Score (0–99)]
+    S1 --> S2
+  end
+
+  L2 --> S1
+  S2 --> L4[Layer 4: Policy Engine\n- Risk tier evaluation (YAML thresholds)\n- Actions: ALLOW / CHALLENGE / BLOCK\n- Logging & feedback]
+
+  L4 -.-> MON[Monitoring & Logging System\n- Prometheus + Grafana (metrics)\n- ELK Stack]
+  L3G -.-> SUP[Support Infrastructure\n- MinIO (model storage)\n- Redis (caching)\n- YAML configuration]

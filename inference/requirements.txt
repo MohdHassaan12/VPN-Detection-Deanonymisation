@@ -1,0 +1,10 @@
+fastapi==0.95.2
+uvicorn[standard]==0.22.0
+tensorflow==2.13.0
+xgboost==1.7.6
+numpy==1.25.2
+redis==4.5.5
+pydantic==1.10.9
+boto3==1.26.159
+aiohttp==3.8.4
+pillow==10.0.0

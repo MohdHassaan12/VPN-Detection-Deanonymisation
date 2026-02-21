@@ -1,0 +1,197 @@
+# Dataset Merge Configuration
+# Last Updated: November 9, 2025
+
+# Input Datasets
+datasets:
+  vnat:
+    path: "LL MIT VNAT Dataset/"
+    type: "pcap"
+    purpose: "app_classification"
+    vpn_flag: false
+    label_mapping:
+      streaming: "Video_Streaming"
+      chat: "Chat"
+      voip: "VoIP"
+      file_transfer: "File_Transfer"
+      browsing: "Browsing"
+      c2: "C2_Communication"
+  
+  iscxvpn2016:
+    path: "ISCXVPN2016/"  # Update with actual path
+    type: "pcap"
+    purpose: "app_classification"
+    vpn_flag: true
+    label_mapping:
+      browsing: "Browsing"
+      email: "Email"
+      chat: "Chat"
+      streaming: "Video_Streaming"
+      voip: "VoIP"
+      p2p: "P2P"
+      file_transfer: "File_Transfer"
+  
+  cic_ids_2017:
+    path: "CIC-IDS2017/"
+    type: "parquet"
+    purpose: "intent_classification"
+    vpn_flag: false
+    label_mapping:
+      Benign: "Benign"
+      Bot: "Botnet"
+      DDoS: "DDoS"
+      DoS: "DoS"
+      PortScan: "Portscan"
+      Infiltration: "Infiltration"
+      "Web Attack": "Web_Attack"
+  
+  ustc_tfc2016:
+    path: "USTC-TFC2016-master/"
+    type: "pcap"
+    purpose: "both"
+    vpn_flag: false
+    benign_apps:
+      - "BitTorrent"
+      - "Facetime"
+      - "FTP"
+      - "Gmail"
+      - "MySQL"
+      - "Outlook"
+      - "Skype"
+      - "SMB"
+      - "Weibo"
+      - "WorldOfWarcraft"
+    malware_types:
+      - "Cridex"
+      - "Geodo"
+      - "Htbot"
+      - "Miuref"
+      - "Neris"
+      - "Nsis-ay"
+      - "Shifu"
+      - "Tinba"
+      - "Virut"
+      - "Zeus"
+  
+  university_traffic:
+    path: "fortianalyzer-traffic-*.log"
+    type: "log"
+    purpose: "test"
+    vpn_flag: null  # To be determined
+    parse_format: "fortianalyzer"
+
+# Output Configuration
+output:
+  unified_dataset: "preprocessing/outputs/Unified_Dataset.csv"
+  stage1_dataset: "preprocessing/outputs/Stage1_App_Classification.csv"
+  stage2_dataset: "preprocessing/outputs/Stage2_Intent_Classification.csv"
+  
+  splits:
+    train: "preprocessing/outputs/train.csv"
+    validation: "preprocessing/outputs/val.csv"
+    test: "preprocessing/outputs/test.csv"
+  
+  metadata:
+    label_mapping: "preprocessing/outputs/label_mapping.json"
+    feature_stats: "preprocessing/outputs/feature_statistics.csv"
+    preprocessing_report: "preprocessing/outputs/preprocessing_report.html"
+
+# Feature Engineering
+features:
+  # Flow-based features
+  flow_features:
+    - "packet_count_fwd"
+    - "packet_count_bwd"
+    - "byte_count_fwd"
+    - "byte_count_bwd"
+    - "flow_duration"
+    - "byte_ratio"
+    - "packets_per_second"
+    - "bytes_per_second"
+  
+  # Statistical features
+  statistical_features:
+    - "packet_length_min"
+    - "packet_length_max"
+    - "packet_length_mean"
+    - "packet_length_std"
+    - "packet_length_variance"
+    - "iat_mean"
+    - "iat_std"
+    - "iat_min"
+    - "iat_max"
+  
+  # VPN detection features
+  vpn_features:
+    - "mss"
+    - "mtu"
+    - "ttl"
+    - "window_size"
+    - "tcp_options_count"
+    - "protocol_hint"
+    - "encryption_detected"
+    - "entropy_score"
+  
+  # Behavioral features
+  behavioral_features:
+    - "connection_rate"
+    - "failed_connections"
+    - "syn_ack_delay"
+    - "session_duration"
+    - "periodicity_score"
+
+# Preprocessing Parameters
+preprocessing:
+  # NFStream parameters
+  nfstream:
+    idle_timeout: 120
+    active_timeout: 1800
+    statistical_analysis: true
+    decode_tunnels: false
+  
+  # Data cleaning
+  cleaning:
+    remove_duplicates: true
+    duplicate_threshold: 0.95  # Similarity threshold
+    missing_value_threshold: 0.5  # Remove rows with >50% missing
+    outlier_method: "IQR"
+    outlier_factor: 3.0
+  
+  # Class balancing
+  balancing:
+    method: "SMOTE"
+    target_ratio: 0.2  # Minority to majority ratio
+    k_neighbors: 5
+  
+  # Data splitting
+  splitting:
+    train_size: 0.70
+    val_size: 0.15
+    test_size: 0.15
+    stratify: true
+    random_state: 42
+
+# IP Intelligence (Optional - requires API key)
+ip_intelligence:
+  enabled: false
+  api_provider: "ipqualityscore"
+  api_key: ""  # Set in .env file
+  features:
+    - "fraud_score"
+    - "vpn_probability"
+    - "proxy_score"
+    - "ip_type"
+    - "asn"
+
+# Logging
+logging:
+  level: "INFO"
+  log_dir: "preprocessing/logs/"
+  log_file: "preprocessing.log"
+  console_output: true
+
+# Performance
+performance:
+  n_jobs: -1  # Use all CPU cores
+  chunk_size: 10000  # Process in chunks for large files
+  use_dask: true  # Use Dask for large datasets
+  memory_limit: "8GB"

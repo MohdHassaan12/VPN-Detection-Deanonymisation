@@ -1,0 +1,114 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference-api
+  namespace: vpn-inference
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: inference-api
+  template:
+    metadata:
+      labels:
+        app: inference-api
+    spec:
+      serviceAccountName: vpn-inference-sa
+      containers:
+      - name: inference-api
+        image: yourrepo/inference-api:latest
+        envFrom:
+        - configMapRef:
+            name: inference-config
+        - secretRef:
+            name: storage-credentials
+        env:
+        - name: TF_SERVING_HOST
+          value: "tf-serving.vpn-inference.svc.cluster.local"
+        - name: TF_SERVING_REST_PORT
+          value: "8501"
+        - name: MODELS_DIR
+          value: "/models"
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 20
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+        volumeMounts:
+        - name: models
+          mountPath: /models
+      initContainers:
+      - name: fetch-stage2-model
+        image: bitnami/aws-cli:2.11.0
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: storage-credentials
+              key: MINIO_ACCESS_KEY
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: storage-credentials
+              key: MINIO_SECRET_KEY
+        command:
+        - /bin/sh
+        - -c
+        - |
+          aws --endpoint-url http://minio:9000 s3 cp s3://models/stage2/ /models/stage2 --recursive || (echo "fetch failed"; exit 1)
+        volumeMounts:
+        - name: models
+          mountPath: /models
+      volumes:
+      - name: models
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inference-api
+  namespace: vpn-inference
+spec:
+  selector:
+    app: inference-api
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: inference-api-hpa
+  namespace: vpn-inference
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: inference-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
