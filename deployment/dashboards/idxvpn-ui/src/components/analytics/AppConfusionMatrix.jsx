@@ -11,10 +11,10 @@ const data = [
 
 const AppConfusionMatrix = () => {
     return (
-        <div className="glass-panel p-6 rounded-2xl border border-[#ffffff1a] overflow-hidden flex flex-col">
+        <div className="glass-panel p-6 rounded-2xl border border-divider overflow-hidden flex flex-col">
             <div className="mb-6">
-                <h3 className="text-xl font-bold text-white tracking-tight">Confusion Matrix (Top 5 Apps)</h3>
-                <p className="text-[#a0aabf] text-sm mt-2 leading-relaxed">
+                <h3 className="text-xl font-bold text-default tracking-tight">Confusion Matrix (Top 5 Apps)</h3>
+                <p className="text-muted text-sm mt-2 leading-relaxed">
                     The CNN accurately separates Chat from VoIP despite similarities in encrypted packet length distributions.
                 </p>
             </div>
@@ -23,16 +23,16 @@ const AppConfusionMatrix = () => {
                 <table className="w-full text-center border-collapse text-sm">
                     <thead>
                         <tr>
-                            <th className="p-3 text-[#a0aabf] font-medium border-b border-[#ffffff1a]"></th>
+                            <th className="p-3 text-muted font-medium border-b border-divider"></th>
                             {classes.map(c => (
-                                <th key={c} className="p-3 text-[#a0aabf] font-medium border-b border-[#ffffff1a]">{c}</th>
+                                <th key={c} className="p-3 text-muted font-medium border-b border-divider">{c}</th>
                             ))}
                         </tr>
                     </thead>
                     <tbody className="font-mono">
                         {data.map((row, rowIndex) => (
                             <tr key={rowIndex}>
-                                <th className="p-3 text-[#a0aabf] font-medium text-right border-r border-[#ffffff1a]">
+                                <th className="p-3 text-muted font-medium text-right border-r border-divider">
                                     {classes[rowIndex]}
                                 </th>
                                 {row.map((value, colIndex) => {
@@ -40,7 +40,7 @@ const AppConfusionMatrix = () => {
                                     const alpha = value / 100;
 
                                     let bgColor = 'transparent';
-                                    let textColor = value > 40 ? 'text-white' : 'text-[#a0aabf]';
+                                    let textColor = value > 40 ? 'text-default' : 'text-muted';
 
                                     if (isDiagonal) {
                                         bgColor = `hsla(215, 100%, 65%, ${alpha * 0.8 + 0.1})`;
@@ -51,7 +51,7 @@ const AppConfusionMatrix = () => {
                                     return (
                                         <td
                                             key={colIndex}
-                                            className={`p-3 m-1 border border-[#ffffff0d] transition-colors rounded-sm hover:bg-[#ffffff1a] cursor-default ${textColor} ${isDiagonal ? 'font-bold' : ''}`}
+                                            className={`p-3 m-1 border border-divider transition-colors rounded-sm hover:bg-black/10 dark:bg-white/10 cursor-default ${textColor} ${isDiagonal ? 'font-bold' : ''}`}
                                             style={{ backgroundColor: bgColor }}
                                         >
                                             {value}%

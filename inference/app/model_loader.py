@@ -54,8 +54,8 @@ class ModelManager:
             logger.info("Stage-1 model warm-up completed")
             
         except Exception as e:
-            logger.error(f"Failed to load Stage-1 model: {e}")
-            raise
+            logger.warning(f"Failed to load Stage-1 model (will use fallback): {e}")
+            self.stage1_model = None
     
     async def _load_stage2(self):
         """Load Stage-2 XGBoost model"""
@@ -71,8 +71,16 @@ class ModelManager:
             logger.info("Stage-2 model loaded successfully")
             
             # Warm-up inference
-            dummy_data = xgb.DMatrix(np.zeros((1, 20), dtype=np.float32))
-            _ = self.stage2_model.predict(dummy_data)
+            import pandas as pd
+            # Create a dummy dataframe with the exactly 100 feature columns
+            try:
+                with open(os.path.join(os.path.dirname(self.stage2_model_path), "feature_names.txt"), "r") as f:
+                    feature_cols = [line.strip() for line in f if line.strip()]
+            except:
+                feature_cols = [f"f{i}" for i in range(100)]
+                
+            dummy_df = pd.DataFrame(np.zeros((1, len(feature_cols)), dtype=np.float32), columns=feature_cols)
+            _ = self.stage2_model.predict(xgb.DMatrix(dummy_df))
             logger.info("Stage-2 model warm-up completed")
             
         except Exception as e:
@@ -80,8 +88,8 @@ class ModelManager:
             raise
     
     def models_ready(self) -> bool:
-        """Check if both models are loaded"""
-        return self.stage1_model is not None and self.stage2_model is not None
+        """Check if required models are loaded (Stage 2 is required, Stage 1 is optional)"""
+        return self.stage2_model is not None
     
     def predict_app_class(self, features: np.ndarray) -> Tuple[str, float]:
         """
@@ -94,7 +102,8 @@ class ModelManager:
             (predicted_class, confidence)
         """
         if self.stage1_model is None:
-            raise RuntimeError("Stage-1 model not loaded")
+            # Fallback behavior if model isn't loaded
+            return "UNKNOWN", 0.0
         
         try:
             # Ensure batch dimension
@@ -129,11 +138,20 @@ class ModelManager:
             raise RuntimeError("Stage-2 model not loaded")
         
         try:
+            import pandas as pd
             import xgboost as xgb
             
             # Ensure 2D shape
             if len(features.shape) == 1:
                 features = features.reshape(1, -1)
+                
+            # Try to load feature names to prevent XGBoost ValueError
+            try:
+                with open(os.path.join(os.path.dirname(self.stage2_model_path), "feature_names.txt"), "r") as f:
+                    feature_cols = [line.strip() for line in f if line.strip()]
+                features = pd.DataFrame(features, columns=feature_cols)
+            except Exception as e:
+                logger.warning(f"Could not load feature names: {e}, using raw numpy array")
             
             # Predict
             dmatrix = xgb.DMatrix(features)

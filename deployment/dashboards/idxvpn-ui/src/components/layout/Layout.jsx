@@ -3,7 +3,7 @@ import Sidebar from './Sidebar';
 
 const Layout = ({ activeTab, setActiveTab, children }) => {
     return (
-        <div className="min-h-screen flex bg-[#0d1017] text-[#e2e8f0] font-sans selection:bg-[#4f8fff] selection:text-white">
+        <div className="min-h-screen flex bg-background text-default font-sans selection:bg-[#4f8fff] selection:text-default">
             {/* Dynamic background effects */}
             <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
                 <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#2555ff] rounded-full mix-blend-screen filter blur-[150px] opacity-10 animate-blob"></div>

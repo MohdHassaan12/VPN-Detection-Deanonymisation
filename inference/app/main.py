@@ -8,14 +8,20 @@ import logging
 from typing import Dict, List, Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, Depends
 from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
+import asyncio
 from pydantic import BaseModel, Field
 import redis.asyncio as aioredis
+import numpy as np
 
 from .model_loader import ModelManager
 from .predict import predict_flow
 from .utils import extract_features_from_request
+from .auth import authenticate_user, create_access_token, get_current_active_user, get_current_admin_user, fake_users_db, ACCESS_TOKEN_EXPIRE_MINUTES, Token, User
+from datetime import timedelta
 
 # Configure logging
 logging.basicConfig(
@@ -29,16 +35,74 @@ model_manager: Optional[ModelManager] = None
 redis_client: Optional[aioredis.Redis] = None
 
 
+async def simulate_traffic_task():
+    """Background task to simulate traffic and populate WebSocket for dashboard."""
+    import random
+    import datetime
+    
+    flowTypes = ['HTTPS', 'DNS', 'QUIC', 'TCP', 'UDP', 'OpenVPN', 'WireGuard']
+    apps = ['BROWSING', 'VIDEO', 'CHAT', 'P2P', 'VOIP', 'FILE_TRANSFER']
+    
+    logger.info("Starting traffic simulation background task...")
+    
+    while True:
+        try:
+            await asyncio.sleep(1.5)
+            
+            if not model_manager or not model_manager.models_ready():
+                continue
+                
+            isVpn = random.random() > 0.6
+            deanonymised = isVpn and random.random() > 0.1
+            trueApp = apps[random.randint(0, len(apps)-1)] if (isVpn and deanonymised) else flowTypes[random.randint(0, len(flowTypes)-1)]
+            
+            # Generate dummy xgboost features (100 is expected by the model)
+            dummy_features = np.random.rand(100).astype(np.float32)
+            
+            risk_score, intent_class, intent_confidence = model_manager.predict_risk_score(dummy_features)
+            
+            # Determine action
+            if risk_score <= 20:
+                action = "ALLOW"
+            elif risk_score <= 60:
+                action = "CHALLENGE"
+            else:
+                action = "BLOCK"
+            
+            request_id = f"req_sim_{random.randint(1000, 9999)}"
+            latency_ms = random.randint(10, 50)
+            
+            broadcast_msg = {
+                "id": request_id,
+                "time": datetime.datetime.now().strftime("%H:%M:%S"),
+                "src": f"10.0.0.{random.randint(1, 255)}",
+                "dst": f"{random.randint(1,255)}.{random.randint(1,255)}.1.{random.randint(1,255)}",
+                "flowType": trueApp,
+                "action": action,
+                "confidence": round(intent_confidence * 100, 1),
+                "latency": latency_ms,
+                "isVpn": isVpn,
+                "deanonymised": deanonymised,
+                "trueApp": trueApp
+            }
+            if ws_manager:
+                await ws_manager.broadcast(broadcast_msg)
+        except Exception as e:
+            logger.warning(f"Error in traffic simulator: {e}")
+            await asyncio.sleep(5)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
     global model_manager, redis_client
+
     
     # Startup: Load models
     logger.info("Loading ML models...")
     model_manager = ModelManager(
-        stage1_model_dir=os.getenv("STAGE1_MODEL_DIR", "/models/stage1"),
-        stage2_model_path=os.getenv("STAGE2_MODEL_PATH", "/models/stage2/model.xgb")
+        stage1_model_dir=os.getenv("STAGE1_MODEL_DIR", "models/stage1"),
+        stage2_model_path=os.getenv("STAGE2_MODEL_PATH", "models/stage2/model.xgb")
     )
     await model_manager.load_models()
     logger.info("Models loaded successfully")
@@ -56,14 +120,39 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Failed to connect to Redis: {e}. Caching disabled.")
         redis_client = None
+        
+    # Start traffic simulation
+    sim_task = asyncio.create_task(simulate_traffic_task())
     
     yield
     
     # Shutdown: Close connections
+    sim_task.cancel()
     if redis_client:
         await redis_client.close()
     logger.info("Inference service shut down")
 
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except Exception as e:
+                pass
+
+ws_manager = ConnectionManager()
 
 app = FastAPI(
     title="VPN Detection & Deanonymisation API",
@@ -72,6 +161,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Request/Response Models
 class FlowFeatures(BaseModel):
@@ -142,6 +239,28 @@ INFERENCE_LATENCY = Histogram(
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
 
+# Authentication Endpoints
+@app.post("/auth/login", response_model=Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username, "role": user.role}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.get("/auth/me", response_model=User)
+async def read_users_me(current_user: User = Depends(get_current_active_user)):
+    return current_user
+
+
 # API Endpoints
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
@@ -154,8 +273,8 @@ async def health_check():
     )
 
 @app.post("/predict", response_model=PredictionResponse)
-async def predict(features: FlowFeatures, request: Request):
-    """Main prediction endpoint"""
+async def predict(features: FlowFeatures, request: Request, current_user: User = Depends(get_current_active_user)):
+    """Main prediction endpoint (Secured)"""
     start_time = time.time()
     request_id = request.headers.get("X-Request-ID", f"req_{int(time.time() * 1000)}")
     
@@ -212,6 +331,26 @@ async def predict(features: FlowFeatures, request: Request):
             except Exception as e:
                 logger.warning(f"Cache write error: {e}")
                 
+        # Broadcast via WebSockets
+        try:
+            import datetime
+            broadcast_msg = {
+                "id": request_id,
+                "time": datetime.datetime.now().strftime("%H:%M:%S"),
+                "src": features.src_ip,
+                "dst": features.dst_ip or "Unknown",
+                "flowType": result["app_class"],
+                "action": result["action"],
+                "confidence": result["intent_confidence"] * 100,
+                "latency": latency_ms,
+                "isVpn": features.is_vpn if features.is_vpn is not None else False,
+                "deanonymised": result["app_class"] not in ["UNKNOWN", "VPN"],
+                "trueApp": result["app_class"]
+            }
+            asyncio.create_task(ws_manager.broadcast(broadcast_msg))
+        except Exception as e:
+            logger.warning(f"Broadcast error: {e}")
+
         # Update specific metrics
         PREDICTIONS_TOTAL.labels(action=result['action']).inc()
         INFERENCE_LATENCY.observe(latency_ms)
@@ -225,8 +364,8 @@ async def predict(features: FlowFeatures, request: Request):
 
 
 @app.post("/predict/batch", response_model=List[PredictionResponse])
-async def predict_batch(flows: List[FlowFeatures], request: Request):
-    """Batch prediction endpoint"""
+async def predict_batch(flows: List[FlowFeatures], request: Request, current_user: User = Depends(get_current_active_user)):
+    """Batch prediction endpoint (Secured)"""
     results = []
     for flow in flows:
         try:
@@ -237,6 +376,20 @@ async def predict_batch(flows: List[FlowFeatures], request: Request):
             # Continue with other predictions
             continue
     return results
+
+
+    return results
+
+
+@app.websocket("/ws/logs")
+async def websocket_logs(websocket: WebSocket):
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            # Keep connection alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
 
 
 @app.exception_handler(Exception)

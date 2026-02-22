@@ -84,14 +84,14 @@ def build_stage1_features(features) -> np.ndarray:
     # For now, create feature vector from flow stats
     
     flow_features = [
-        features.flow_duration or 0.0,
-        features.total_fwd_packets or 0,
-        features.total_bwd_packets or 0,
-        features.total_length_fwd_packets or 0,
-        features.total_length_bwd_packets or 0,
-        features.fwd_packet_length_mean or 0.0,
-        features.bwd_packet_length_mean or 0.0,
-        features.flow_iat_mean or 0.0,
+        features.raw_features.get('flow_duration', 0.0),
+        features.raw_features.get('total_fwd_packets', 0),
+        features.raw_features.get('total_bwd_packets', 0),
+        features.raw_features.get('total_length_fwd_packets', 0),
+        features.raw_features.get('total_length_bwd_packets', 0),
+        features.raw_features.get('fwd_packet_length_mean', 0.0),
+        features.raw_features.get('bwd_packet_length_mean', 0.0),
+        features.raw_features.get('flow_iat_mean', 0.0),
     ]
     
     # Pad to expected size or use placeholder

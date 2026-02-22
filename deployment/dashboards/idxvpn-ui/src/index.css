@@ -1,28 +1,52 @@
 @import "tailwindcss";
 
 @theme {
-  --color-vpn-dark: hsl(220, 30%, 10%);
-  --color-vpn-panel: hsl(220, 25%, 15%);
-  --color-vpn-border: hsl(220, 20%, 25%);
-  --color-vpn-accent: hsl(215, 100%, 65%);
-  --color-vpn-text: hsl(210, 20%, 90%);
-  --color-vpn-muted: hsl(210, 16%, 65%);
+  --color-background: var(--color-bg);
+  --color-panel: var(--color-panel-bg);
+  --color-border-divider: var(--color-border);
+  --color-text-default: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
 
+  --color-vpn-accent: hsl(215, 100%, 65%);
   --color-status-success: hsl(140, 60%, 45%);
   --color-status-warning: hsl(35, 90%, 55%);
   --color-status-danger: hsl(350, 75%, 55%);
 }
 
+@layer base {
+  :root {
+    --color-bg: hsl(210, 20%, 98%);
+    --color-panel-bg: hsla(0, 0%, 100%, 0.85);
+    --color-border: hsla(220, 15%, 85%, 0.8);
+    --color-text: hsl(222, 47%, 11%);
+    --color-text-muted: hsl(215, 16%, 47%);
+  }
+
+  .dark {
+    --color-bg: hsl(220, 30%, 10%);
+    --color-panel-bg: hsla(220, 25%, 15%, 0.8);
+    --color-border: hsla(210, 20%, 90%, 0.1);
+    --color-text: hsl(210, 20%, 90%);
+    --color-text-muted: hsl(210, 16%, 65%);
+  }
+}
+
 body {
-  background-color: var(--color-vpn-dark);
-  color: var(--color-vpn-text);
+  background-color: var(--color-background);
+  color: var(--color-text-default);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Custom Utilities for Glassmorphism */
 @utility glass-panel {
-  background: hsla(220, 25%, 15%, 0.7);
+  background: var(--color-panel);
   backdrop-filter: blur(12px);
-  border: 1px solid hsla(210, 20%, 90%, 0.1);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border-divider);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+}
+
+.dark .glass-panel {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
