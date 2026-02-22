@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VPN Analytics & Intelligence</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <h2>IDxVPN</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="#" class="nav-item" data-view="analytics">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                        <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                    </svg>
+                    Analytics & Deanonymisation
+                </a>
+                <a href="#" class="nav-item" data-view="policies">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    Policies
+                </a>
+                <a href="#" class="nav-item" data-view="detection">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <line x1="11" y1="8" x2="11" y2="14"></line>
+                        <line x1="8" y1="11" x2="14" y2="11"></line>
+                    </svg>
+                    Interactive Detection
+                </a>
+                <a href="#" class="nav-item" data-view="settings">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                    Settings
+                </a>
+            </nav>
+            <div class="training-status">
+                <div class="status-indicator pluse"></div>
+                <div class="status-text">
+                    <span class="status-title">Model Training</span>
+                    <span class="status-subtitle">DigitalOcean Node active</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <div>
+                    <h1>Live Analytics Center</h1>
+                    <p class="subtitle">Monitoring global VPN traffic and real-time model inferences.</p>
+                </div>
+                <!-- Status pill -->
+                <div class="cluster-status">
+                    <span class="badge active">Service: Healthy</span>
+                    <span class="badge processing">Latency: ~45ms</span>
+                </div>
+            </header>
+
+            <!-- Dashboard View (Default) -->
+            <div id="view-dashboard" class="view-section active">
+                <!-- KPI Cards -->
+                <section class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <h3>Total Scanned</h3>
+                            <div class="icon-bg blue">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="kpi-total">12,458</div>
+                        <div class="kpi-trend positive">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            </svg>
+                            <span>+14.5% from last hour</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <h3>VPN Detected</h3>
+                            <div class="icon-bg purple">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="kpi-vpn">3,142</div>
+                        <div class="kpi-trend positive">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            </svg>
+                            <span>25% of total traffic</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <h3>Deanonymised Flows</h3>
+                            <div class="icon-bg yellow">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="kpi-deanon">2,891</div>
+                        <div class="kpi-trend positive">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            </svg>
+                            <span>92% deanonymisation rate</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <h3>High-Risk Blocks</h3>
+                            <div class="icon-bg red">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-value danger" id="kpi-blocks">156</div>
+                        <div class="kpi-trend negative">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                                <polyline points="17 18 23 18 23 12"></polyline>
+                            </svg>
+                            <span>+2.3% suspicious intent</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts Section -->
+                <section class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Traffic Flow Analysis</h3>
+                            <select class="chart-filter" title="Filter timeframe">
+                                <option>Last 1 Hour</option>
+                                <option>Last 24 Hours</option>
+                                <option>Last 7 Days</option>
+                            </select>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="trafficChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Deanonymised Apps (Under VPN)</h3>
+                            <button class="icon-btn" title="Options">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="chart-container doughnut">
+                            <canvas id="appClassChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Real-Time Logs -->
+                <section class="logs-section">
+                    <div class="logs-header">
+                        <h3>Latest Inference Stream</h3>
+                        <div class="live-indicator">
+                            <div class="dot"></div> Live
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="logs-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Source IP</th>
+                                    <th>Is VPN?</th>
+                                    <th>True App (Deanonymised)</th>
+                                    <th>Intent Score</th>
+                                    <th>Policy Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Analytics & Deanonymisation View -->
+            <div id="view-analytics" class="view-section">
+                <div class="page-title">
+                    <h2>Deanonymisation Metrics</h2>
+                    <p class="text-muted">Detailed breakdown of VPN traffic mapping to their true underlying application
+                        intents.</p>
+                </div>
+
+                <div class="analytics-layout">
+                    <div class="chart-card large-card">
+                        <div class="chart-header">
+                            <h3>Stage 1 Pipeline: Packet-Block CNN Accuracy</h3>
+                        </div>
+                        <div class="metrics-grid">
+                            <div class="metric-item">
+                                <span class="metric-label">Precision</span>
+                                <span class="metric-value">94.2%</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Recall</span>
+                                <span class="metric-value">93.8%</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">F1-Score</span>
+                                <span class="metric-value">94.0%</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Avg Inference Latency</span>
+                                <span class="metric-value">22ms</span>
+                            </div>
+                        </div>
+                        <div class="chart-container" style="height: 250px;">
+                            <canvas id="accuracyChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Confusion Matrix (Top 5 Apps)</h3>
+                        </div>
+                        <div class="matrix-container">
+                            <table class="confusion-matrix" id="confMatrix">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Video</th>
+                                        <th>VoIP</th>
+                                        <th>P2P</th>
+                                        <th>Chat</th>
+                                        <th>Web</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-muted" style="margin-top: 15px; font-size: 0.85rem">
+                            The CNN accurately separates Chat from VoIP despite similarities in encrypted packet length
+                            distributions.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policies View -->
+            <div id="view-policies" class="view-section">
+                <div class="page-title">
+                    <h2>Risk-Based Policy Rules</h2>
+                    <p class="text-muted">Manage how the gateway reacts to the Stage 2 Intent Classifier's inferred risk
+                        scores.</p>
+                </div>
+
+                <div class="policy-cards">
+                    <div class="policy-card allow">
+                        <div class="policy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg></div>
+                        <div class="policy-info">
+                            <h3>ALLOW (Low Risk)</h3>
+                            <p>Legitimate traffic. User browsing normal sites securely.</p>
+                            <span class="score-range">Score: 0 - 20</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="policy-card challenge">
+                        <div class="policy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                                </path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg></div>
+                        <div class="policy-info">
+                            <h3>CHALLENGE (Medium Risk)</h3>
+                            <p>Unusual patterns. Force MFA/CAPTCHA before proceeding.</p>
+                            <span class="score-range">Score: 21 - 60</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="policy-card block">
+                        <div class="policy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg></div>
+                        <div class="policy-info">
+                            <h3>BLOCK (High Risk)</h3>
+                            <p>Malicious intent detected. Immediate drop & log.</p>
+                            <span class="score-range">Score: 61 - 99</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Detection View -->
+            <div id="view-detection" class="view-section">
+                <div class="page-title">
+                    <h2>Interactive Detection Tool</h2>
+                    <p class="text-muted">Simulate a packet capture flow and pass it through the active 4-Layer ML
+                        Pipeline.</p>
+                </div>
+
+                <div class="analytics-layout">
+                    <!-- Flow Input Panel -->
+                    <div class="settings-group" style="margin-bottom: 0;">
+                        <h3>Flow Parameters</h3>
+                        <form id="detection-form" onsubmit="return false;">
+                            <div class="setting-item">
+                                <div>
+                                    <h4>Source IP</h4>
+                                </div>
+                                <input type="text" id="sim-src-ip" class="form-input" value="192.168.1.100"
+                                    placeholder="e.g. 192.168.1.100">
+                            </div>
+                            <div class="setting-item">
+                                <div>
+                                    <h4>Destination IP</h4>
+                                </div>
+                                <input type="text" id="sim-dst-ip" class="form-input" value="8.8.8.8"
+                                    placeholder="e.g. 8.8.8.8">
+                            </div>
+                            <div class="setting-item">
+                                <div>
+                                    <h4>Destination Port</h4>
+                                </div>
+                                <input type="number" id="sim-port" class="form-input" value="443"
+                                    placeholder="e.g. 443">
+                            </div>
+                            <div class="setting-item">
+                                <div>
+                                    <h4>Is Encrypted / Tunneled?</h4>
+                                    <p class="text-muted">Simulate traffic inside an IPSec or OpenVPN tunnel.</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="sim-is-vpn" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <button type="button" id="btn-detect" class="btn-primary"
+                                style="margin-top: 24px; width: 100%;">Run Pipeline Detection</button>
+                        </form>
+                    </div>
+
+                    <!-- Detection Result Panel -->
+                    <div class="chart-card" id="detection-result-card"
+                        style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 400px;">
+                        <div id="detect-idle" style="color: var(--text-muted);">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5" style="margin-bottom: 16px; opacity: 0.5;">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <p>Ready to Scan Flow</p>
+                        </div>
+
+                        <div id="detect-loading" style="display: none;">
+                            <div class="status-indicator pluse"
+                                style="width: 24px; height: 24px; margin: 0 auto 16px auto;"></div>
+                            <p class="text-primary">Extracting Packet-Blocks & Running Inference...</p>
+                        </div>
+
+                        <div id="detect-output" style="display: none; width: 100%;">
+                            <h3 style="margin-bottom: 24px; font-size: 1.25rem;">Detection Results</h3>
+
+                            <div class="metrics-grid"
+                                style="grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                                <div class="metric-item">
+                                    <span class="metric-label">True App (Deanonymised)</span>
+                                    <span class="metric-value" id="res-app">VIDEO</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">CNN Confidence</span>
+                                    <span class="metric-value" id="res-conf">98.2%</span>
+                                </div>
+                            </div>
+
+                            <div class="policy-card" id="res-policy-card" style="margin-bottom: 0;">
+                                <div class="policy-icon" id="res-icon">
+                                    <!-- Icon updated via JS -->
+                                </div>
+                                <div class="policy-info" style="text-align: left;">
+                                    <h3 id="res-action">ALLOW</h3>
+                                    <p id="res-desc">Normal video streaming behavior detected under VPN.</p>
+                                    <span class="score-range" id="res-score">Risk Score: 12/100</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="view-settings" class="view-section">
+                <div class="page-title">
+                    <h2>Pipeline Configuration</h2>
+                    <p class="text-muted">Adjust system parameters for inference and edge filtering.</p>
+                </div>
+
+                <div class="settings-group">
+                    <h3>ML Pipeline</h3>
+                    <div class="setting-item">
+                        <div>
+                            <h4>Stage 1: Model Version</h4>
+                            <p class="text-muted">Select the active CNN model for app classification.</p>
+                        </div>
+                        <select class="form-select" title="model version">
+                            <option>v1.2 (Latest - DigitalOcean)</option>
+                            <option>v1.1 (Stable)</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <div>
+                            <h4>Feature Extraction Block Size</h4>
+                            <p class="text-muted">Number of packets to capture to generate the CNN image.</p>
+                        </div>
+                        <input type="number" class="form-input" value="64" title="block size">
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>Edge Filtering</h3>
+                    <div class="setting-item">
+                        <div>
+                            <h4>IP Threat Intelligence</h4>
+                            <p class="text-muted">Drop packets from known bad actors before ML inference.</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <button class="btn-primary">Save Changes</button>
+            </div>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -13,52 +13,45 @@ def extract_features_from_request(request_data: dict) -> dict:
 
 def build_stage2_features(features, app_class: str, app_confidence: float) -> np.ndarray:
     """
-    Build Stage-2 feature vector combining:
-    - IP intelligence
-    - Flow statistics  
-    - Stage-1 app classification
-    - Behavioral features
+    Build Stage-2 feature vector matching the exact 100 features used during XGBoost training.
     
-    Returns:
-        numpy array of shape (n_features,)
+    Reads feature_names.txt directly to ensure the vector order is perfect.
     """
+    import os
     
-    # Map app_class to one-hot encoding
-    app_classes = ["BROWSING", "CHAT", "VOIP", "VIDEO", "FILE_TRANSFER", "P2P", "C2_CNC", "UNKNOWN"]
-    app_one_hot = [1.0 if cls == app_class else 0.0 for cls in app_classes]
+    # Load exact feature names list
+    current_dir = os.path.dirname(__file__)
+    feature_names_path = os.path.join(current_dir, "../models/stage2/feature_names.txt")
     
-    # Build feature vector
-    feature_vector = [
-        # IP intelligence (0-4)
-        float(features.is_vpn or 0),
-        float(features.is_proxy or 0),
-        float(features.is_datacenter or 0),
-        (features.fraud_score or 0.0) / 100.0,  # normalize to 0-1
+    try:
+        with open(feature_names_path, "r") as f:
+            feature_names = [line.strip() for line in f.readlines() if line.strip()]
+    except Exception as e:
+        print(f"Warning: Could not read feature_names.txt: {e}. Returning dummy zeros.")
+        return np.zeros(100, dtype=np.float32)
         
-        # Flow statistics (5-11)
-        normalize_feature(features.flow_duration, 0, 300),  # max 5min
-        normalize_feature(features.total_fwd_packets, 0, 1000),
-        normalize_feature(features.total_bwd_packets, 0, 1000),
-        normalize_feature(features.total_length_fwd_packets, 0, 100000),
-        normalize_feature(features.total_length_bwd_packets, 0, 100000),
-        normalize_feature(features.fwd_packet_length_mean, 0, 1500),
-        normalize_feature(features.bwd_packet_length_mean, 0, 1500),
-        
-        # Behavioral (12-14)
-        features.human_score or 0.5,  # default to neutral
-        features.login_failure_rate or 0.0,
-        normalize_feature(features.account_velocity, 0, 100),
-        
-        # MTU indicator (15)
-        1.0 if (features.mtu_value or 1500) < 1450 else 0.0,  # VPN indicator
-        
-        # App classification (16-23)
-        *app_one_hot,
-        
-        # App confidence (24)
-        app_confidence,
-    ]
+    # Build vector based on the exact expected list
+    feature_vector = []
     
+    raw_dict = features.raw_features or {}
+    
+    for fname in feature_names:
+        # Some basic fallbacks for things not explicitly provided
+        val = raw_dict.get(fname)
+        
+        if val is None:
+            # Check edge layer attrs if present
+            if fname == 'Protocol' and features.protocol:
+                val = 6.0 if features.protocol.upper() == 'TCP' else 17.0
+            elif fname == 'vpn_flag' and features.is_vpn is not None:
+                val = 1.0 if features.is_vpn else 0.0
+            elif fname == 'src_port': val = features.src_port
+            elif fname == 'dst_port': val = features.dst_port
+            else:
+                val = 0.0 # Strict default for missing features
+                
+        feature_vector.append(float(val))
+        
     return np.array(feature_vector, dtype=np.float32)
 
 

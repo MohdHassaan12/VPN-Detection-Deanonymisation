@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  --color-vpn-dark: hsl(220, 30%, 10%);
+  --color-vpn-panel: hsl(220, 25%, 15%);
+  --color-vpn-border: hsl(220, 20%, 25%);
+  --color-vpn-accent: hsl(215, 100%, 65%);
+  --color-vpn-text: hsl(210, 20%, 90%);
+  --color-vpn-muted: hsl(210, 16%, 65%);
+
+  --color-status-success: hsl(140, 60%, 45%);
+  --color-status-warning: hsl(35, 90%, 55%);
+  --color-status-danger: hsl(350, 75%, 55%);
+}
+
+body {
+  background-color: var(--color-vpn-dark);
+  color: var(--color-vpn-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Custom Utilities for Glassmorphism */
+@utility glass-panel {
+  background: hsla(220, 25%, 15%, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid hsla(210, 20%, 90%, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}

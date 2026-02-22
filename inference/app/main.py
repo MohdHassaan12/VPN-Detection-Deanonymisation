@@ -76,39 +76,24 @@ app = FastAPI(
 # Request/Response Models
 class FlowFeatures(BaseModel):
     """Input features for prediction"""
-    # IP Intelligence
+    # Essential Routing & Identification
     src_ip: str = Field(..., description="Source IP address")
     dst_ip: Optional[str] = Field(None, description="Destination IP")
-    src_port: int = Field(..., description="Source port")
-    dst_port: int = Field(..., description="Destination port")
-    protocol: str = Field(..., description="TCP or UDP")
+    src_port: Optional[int] = Field(None, description="Source port")
+    dst_port: Optional[int] = Field(None, description="Destination port")
+    protocol: Optional[str] = Field(None, description="Protocol (TCP/UDP)")
     
-    # IP reputation (from edge layer)
+    # Optional IP intelligence features returned by edge layer
     is_vpn: Optional[bool] = Field(None, description="IP is known VPN")
     is_proxy: Optional[bool] = Field(None, description="IP is known proxy")
     is_datacenter: Optional[bool] = Field(None, description="IP is datacenter")
     fraud_score: Optional[float] = Field(None, ge=0, le=100, description="IP fraud score 0-100")
     
-    # Flow statistics
-    flow_duration: Optional[float] = Field(None, description="Flow duration in seconds")
-    total_fwd_packets: Optional[int] = Field(None, description="Forward packets count")
-    total_bwd_packets: Optional[int] = Field(None, description="Backward packets count")
-    total_length_fwd_packets: Optional[int] = Field(None, description="Total bytes forward")
-    total_length_bwd_packets: Optional[int] = Field(None, description="Total bytes backward")
-    fwd_packet_length_mean: Optional[float] = Field(None, description="Mean forward packet size")
-    bwd_packet_length_mean: Optional[float] = Field(None, description="Mean backward packet size")
-    flow_iat_mean: Optional[float] = Field(None, description="Mean inter-arrival time")
-    
-    # Behavioral
-    human_score: Optional[float] = Field(None, ge=0, le=1, description="Human behavior score")
-    login_failure_rate: Optional[float] = Field(None, ge=0, le=1, description="Recent login failure rate")
-    account_velocity: Optional[int] = Field(None, description="Accounts attempted in window")
-    
-    # Additional metadata
-    mtu_value: Optional[int] = Field(None, description="Detected MTU value")
-    tls_fingerprint: Optional[str] = Field(None, description="TLS fingerprint hash")
-    user_agent: Optional[str] = Field(None, description="HTTP User-Agent")
-    
+    # Catch-all for the 100 flow features required by XGBoost
+    # The client must supply these under the 'raw_features' dict,
+    # or we extract them from a flattened dict.
+    raw_features: Dict[str, float] = Field(default_factory=dict, description="The 100 raw numeric features required by XGBoost model")
+
 
 class PredictionResponse(BaseModel):
     """Prediction response"""
@@ -132,6 +117,31 @@ class HealthResponse(BaseModel):
     version: str
 
 
+from prometheus_client import make_asgi_app, Counter, Histogram
+
+# Initialize Prometheus metrics
+PREDICTIONS_TOTAL = Counter(
+    'vpn_predictions_total',
+    'Total predictions made by risk action',
+    ['action']
+)
+CACHE_HITS = Counter(
+    'vpn_cache_hits_total',
+    'Total cache hits vs misses',
+    ['status']
+)
+INFERENCE_LATENCY = Histogram(
+    'vpn_inference_latency_ms',
+    'Inference latency in milliseconds',
+    buckets=(10, 25, 50, 100, 250, 500, 1000)
+)
+
+# ... (keep existing setup and app object definition) ...
+
+# Mount Prometheus metrics endpoint
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
+
 # API Endpoints
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
@@ -142,7 +152,6 @@ async def health_check():
         redis_connected=redis_client is not None,
         version="1.0.0"
     )
-
 
 @app.post("/predict", response_model=PredictionResponse)
 async def predict(features: FlowFeatures, request: Request):
@@ -165,11 +174,21 @@ async def predict(features: FlowFeatures, request: Request):
                 result = json.loads(cached_result)
                 result["cached"] = True
                 result["request_id"] = request_id
-                result["latency_ms"] = (time.time() - start_time) * 1000
+                latency_ms = (time.time() - start_time) * 1000
+                result["latency_ms"] = latency_ms
+                
+                # Update metrics
+                CACHE_HITS.labels(status='hit').inc()
+                PREDICTIONS_TOTAL.labels(action=result['action']).inc()
+                INFERENCE_LATENCY.observe(latency_ms)
+                
                 logger.info(f"Cache hit for {cache_key}")
                 return PredictionResponse(**result)
         except Exception as e:
             logger.warning(f"Cache read error: {e}")
+            
+    # Metrics
+    CACHE_HITS.labels(status='miss').inc()
     
     # Predict
     try:
@@ -192,6 +211,10 @@ async def predict(features: FlowFeatures, request: Request):
                 await redis_client.setex(cache_key, cache_ttl, json.dumps(result))
             except Exception as e:
                 logger.warning(f"Cache write error: {e}")
+                
+        # Update specific metrics
+        PREDICTIONS_TOTAL.labels(action=result['action']).inc()
+        INFERENCE_LATENCY.observe(latency_ms)
         
         logger.info(f"Prediction completed: risk_score={result['risk_score']}, action={result['action']}, latency={latency_ms:.2f}ms")
         return PredictionResponse(**result)
@@ -214,18 +237,6 @@ async def predict_batch(flows: List[FlowFeatures], request: Request):
             # Continue with other predictions
             continue
     return results
-
-
-@app.get("/metrics")
-async def metrics():
-    """Prometheus metrics endpoint"""
-    # TODO: Implement proper Prometheus metrics
-    return {
-        "predictions_total": 0,
-        "cache_hits": 0,
-        "cache_misses": 0,
-        "avg_latency_ms": 0
-    }
 
 
 @app.exception_handler(Exception)
