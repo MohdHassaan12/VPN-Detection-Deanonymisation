@@ -1,0 +1,28 @@
+.DS_Store
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Large datasets / captures / logs (do not commit)
+CIC-IDS2017/
+USTC-TFC2016-master/
+VNAT_release_1/
+Network Data - University/
+LL MIT VNAT Dataset/
+
+*.pcap
+*.pcapng
+*.cap
+*.7z
+*.parquet
+
+*.log
+
+# Generated outputs
+preprocessing/outputs/
+
+# Docs binaries
+*.pdf
+*.docx
