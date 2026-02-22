@@ -26,3 +26,10 @@ preprocessing/outputs/
 # Docs binaries
 *.pdf
 *.docx
+
+# Docker / Deployment secrets — NEVER commit!
+.env
+
+# Node / frontend
+node_modules/
+dist/

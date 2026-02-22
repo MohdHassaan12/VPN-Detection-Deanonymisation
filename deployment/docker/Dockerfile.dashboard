@@ -1,0 +1,29 @@
+# syntax=docker/dockerfile:1
+# ---- Stage 1: Build React/Vite app ----
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Accept build-time API URL (e.g. http://165.232.100.200)
+ARG VITE_API_BASE_URL=http://localhost:8080
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
+COPY deployment/dashboards/idxvpn-ui/package*.json ./
+RUN npm ci --legacy-peer-deps
+
+COPY deployment/dashboards/idxvpn-ui/ ./
+RUN npm run build
+
+# ---- Stage 2: Serve with Nginx ----
+FROM nginx:1.27-alpine
+
+# Remove default nginx page
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy built static files
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Nginx config injected by compose via volume (see docker-compose.yml)
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

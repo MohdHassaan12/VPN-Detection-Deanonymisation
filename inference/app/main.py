@@ -378,8 +378,6 @@ async def predict_batch(flows: List[FlowFeatures], request: Request, current_use
     return results
 
 
-    return results
-
 
 @app.websocket("/ws/logs")
 async def websocket_logs(websocket: WebSocket):

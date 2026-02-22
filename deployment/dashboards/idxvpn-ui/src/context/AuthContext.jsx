@@ -29,7 +29,9 @@ export const AuthProvider = ({ children }) => {
             formData.append('username', username);
             formData.append('password', password);
 
-            const response = await fetch('http://localhost:8080/auth/login', {
+            // Use VITE_API_BASE_URL in prod (set at build time) or the current origin in dev
+            const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+            const response = await fetch(`${apiBase}/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',

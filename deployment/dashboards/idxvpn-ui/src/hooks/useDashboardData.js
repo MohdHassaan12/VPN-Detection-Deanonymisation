@@ -25,7 +25,12 @@ export const useDashboardData = () => {
         setChartData(initialChart);
 
         const connectWebSocket = () => {
-            const ws = new WebSocket('ws://localhost:8080/ws/logs');
+            // Dynamically derive WS URL so it works in dev (localhost:8080) and prod (same-origin via Nginx /ws/)
+            const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsHost = import.meta.env.VITE_API_BASE_URL
+                ? import.meta.env.VITE_API_BASE_URL.replace(/^https?:/, wsProto)
+                : `${wsProto}//${window.location.host}`;
+            const ws = new WebSocket(`${wsHost}/ws/logs`);
 
             ws.onopen = () => {
                 console.log("Connected to VPN logs stream");
