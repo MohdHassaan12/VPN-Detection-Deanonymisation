@@ -70,17 +70,17 @@ class ModelManager:
             self.stage2_model.load_model(self.stage2_model_path)
             logger.info("Stage-2 model loaded successfully")
             
-            # Warm-up inference
-            import pandas as pd
-            # Create a dummy dataframe with the exactly 100 feature columns
+            # Load feature names (used when building DMatrix to avoid XGBoost feature mismatch)
             try:
                 with open(os.path.join(os.path.dirname(self.stage2_model_path), "feature_names.txt"), "r") as f:
-                    feature_cols = [line.strip() for line in f if line.strip()]
-            except:
-                feature_cols = [f"f{i}" for i in range(100)]
-                
-            dummy_df = pd.DataFrame(np.zeros((1, len(feature_cols)), dtype=np.float32), columns=feature_cols)
-            _ = self.stage2_model.predict(xgb.DMatrix(dummy_df))
+                    self._feature_cols = [line.strip() for line in f if line.strip()]
+            except Exception:
+                self._feature_cols = [f"f{i}" for i in range(100)]
+            
+            # Warm-up inference — use numpy directly, no pandas needed
+            dummy = np.zeros((1, len(self._feature_cols)), dtype=np.float32)
+            dmat = xgb.DMatrix(dummy, feature_names=self._feature_cols)
+            _ = self.stage2_model.predict(dmat)
             logger.info("Stage-2 model warm-up completed")
             
         except Exception as e:
@@ -127,47 +127,40 @@ class ModelManager:
     def predict_risk_score(self, features: np.ndarray) -> Tuple[int, str, float]:
         """
         Predict risk score using Stage-2 XGBoost
-        
+
         Args:
             features: (n_features,) vector of combined features
-            
+
         Returns:
             (risk_score, intent_class, confidence)
         """
         if self.stage2_model is None:
             raise RuntimeError("Stage-2 model not loaded")
-        
+
         try:
-            import pandas as pd
             import xgboost as xgb
-            
+
             # Ensure 2D shape
             if len(features.shape) == 1:
                 features = features.reshape(1, -1)
-                
-            # Try to load feature names to prevent XGBoost ValueError
-            try:
-                with open(os.path.join(os.path.dirname(self.stage2_model_path), "feature_names.txt"), "r") as f:
-                    feature_cols = [line.strip() for line in f if line.strip()]
-                features = pd.DataFrame(features, columns=feature_cols)
-            except Exception as e:
-                logger.warning(f"Could not load feature names: {e}, using raw numpy array")
-            
-            # Predict
-            dmatrix = xgb.DMatrix(features)
+
+            # Build DMatrix with feature names directly — no pandas needed
+            feature_cols = getattr(self, "_feature_cols", None) or [f"f{i}" for i in range(features.shape[1])]
+            dmatrix = xgb.DMatrix(features, feature_names=feature_cols)
+
             predictions = self.stage2_model.predict(dmatrix)
-            
+
             # Convert probability to risk score (0-99)
             probability = float(predictions[0])
             risk_score = int(probability * 99)
-            
+
             # Intent classification
             intent_class = "MALICIOUS" if risk_score > 60 else "BENIGN"
             confidence = probability if intent_class == "MALICIOUS" else (1.0 - probability)
-            
+
             logger.debug(f"Stage-2 prediction: risk_score={risk_score}, intent={intent_class}")
             return risk_score, intent_class, confidence
-            
+
         except Exception as e:
             logger.error(f"Stage-2 prediction error: {e}")
             return 50, "UNKNOWN", 0.5  # Default to medium risk on error
