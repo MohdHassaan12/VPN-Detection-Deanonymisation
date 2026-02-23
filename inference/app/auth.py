@@ -38,13 +38,19 @@ class UserInDB(User):
     hashed_password: str
 
 
+# Pre-computed bcrypt hashes — generated with: pwd_context.hash("<password>")
+# This avoids calling pwd_context.hash() at module import time which crashes
+# with passlib + bcrypt>=4.x due to wrap-bug detection during backend loading.
+_HASH_ADMIN = "$2b$12$jPx4vOLRqss58lCfAt7VBe6TFb2yOsWuNxn2vB.ExBGCnKO6xxQ2K"    # admin123
+_HASH_VIEWER = "$2b$12$gf.Act5DvDBylJC3I7QU1OkjZTNU7W11OQPYsgbdPAjq3.EuIgVBy"  # viewer123
+
 # Mock User Database (Replace with a real database in production)
 fake_users_db = {
     "admin": {
         "username": "admin",
         "full_name": "Security Admin",
         "email": "admin@idxvpn.local",
-        "hashed_password": pwd_context.hash("admin123"),
+        "hashed_password": _HASH_ADMIN,
         "disabled": False,
         "role": "admin",
     },
@@ -52,7 +58,7 @@ fake_users_db = {
         "username": "viewer",
         "full_name": "Read Only User",
         "email": "viewer@idxvpn.local",
-        "hashed_password": pwd_context.hash("viewer123"),
+        "hashed_password": _HASH_VIEWER,
         "disabled": False,
         "role": "viewer",
     }
