@@ -12,4 +12,3 @@ passlib[bcrypt]
 python-jose[cryptography]
 python-multipart
 bcrypt
-fastapi-cors
