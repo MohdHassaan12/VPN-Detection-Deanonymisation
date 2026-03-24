@@ -1,0 +1,27 @@
+version: "1"
+services:
+  # Python Backend API
+  - type: web
+    name: vpn-detection-api
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn inference.app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+      - key: STAGE1_MODEL_DIR
+        value: "inference/models/stage1"
+      - key: STAGE2_MODEL_PATH
+        value: "inference/models/stage2/model.xgb"
+      - key: REDIS_HOST
+        value: "redis-service"  # Updated dynamically internally or via Render Redis
+      - key: REDIS_PORT
+        value: "6379"
+      - key: SECRET_KEY
+        generateValue: true
+
+  # Redis for background tasks / session storage
+  - type: redis
+    name: vpn-detection-redis
+    ipAllowList: [] # Accept from internal Render cluster only
+    plan: free

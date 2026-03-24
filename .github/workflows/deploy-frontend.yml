@@ -1,0 +1,47 @@
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'deployment/dashboards/idxvpn-ui/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deployment/dashboards/idxvpn-ui
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: 'deployment/dashboards/idxvpn-ui/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build project
+        env:
+          # The API backend URL should be set in GitHub Secrets -> Actions -> VITE_API_BASE_URL
+          # (e.g. VITE_API_BASE_URL=https://my-render-app.onrender.com)
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deployment/dashboards/idxvpn-ui/dist
