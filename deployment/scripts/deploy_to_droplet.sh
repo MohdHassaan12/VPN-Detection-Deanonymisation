@@ -53,6 +53,7 @@ echo "📤  [2/5] Syncing code (rsync)..."
 rsync -avz --progress \
   --exclude '.git' \
   --exclude '.venv' \
+  --exclude '.venv_tf' \
   --exclude 'node_modules' \
   --exclude '__pycache__' \
   --exclude '*.pyc' \
@@ -61,6 +62,8 @@ rsync -avz --progress \
   --exclude '.DS_Store' \
   --exclude '.env' \
   --exclude 'pretrained_model.bin' \
+  --exclude 'datasets' \
+  --exclude 'ET-BERT-*' \
   "$PROJECT_ROOT/" "$USERNAME@$DROPLET_IP:$REMOTE_DIR/"
 
 # ── Step 3: Copy .env ────────────────────────────────────────────────────────
