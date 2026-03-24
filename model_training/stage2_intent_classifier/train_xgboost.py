@@ -22,7 +22,7 @@ def preprocess_data(df):
     df.fillna(0, inplace=True)
     
     # Target variable for Intent classification
-    target_col = 'intent_label'
+    target_col = 'traffic_type'
     
     if target_col not in df.columns:
         print(f"Error: {target_col} not found in columns!")
@@ -30,9 +30,9 @@ def preprocess_data(df):
         
     print(f"Intent Label Distribution:\n{df[target_col].value_counts()}")
     
-    # Convert text target to numeric (Benign -> 0, Malicious/Attack -> 1)
-    # We map 'Benign' to 0 and everything else to 1 for binary intent classifier
-    df['target'] = df[target_col].apply(lambda x: 0 if str(x).lower() == 'benign' else 1)
+    # Convert text target to numeric (VPN -> 1, Non-VPN -> 0)
+    # We map 'VPN' prefix to 1 and everything else to 0 for binary intent classifier
+    df['target'] = df[target_col].apply(lambda x: 1 if str(x).upper().startswith('VPN') else 0)
     
     # Select feature columns (excluding identifiers, targets, IPs, timestamps)
     exclude_cols = ['src_ip', 'dst_ip', 'timestamp', 'source_file', 'dataset_source', 

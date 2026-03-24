@@ -69,7 +69,7 @@ async def simulate_traffic_task():
             else:
                 action = "BLOCK"
             
-            request_id = f"req_sim_{random.randint(1000, 9999)}"
+            request_id = f"req_sim_{int(time.time() * 1000)}_{random.randint(1000, 9999)}"
             latency_ms = random.randint(10, 50)
             
             broadcast_msg = {
@@ -158,7 +158,8 @@ app = FastAPI(
     title="VPN Detection & Deanonymisation API",
     description="Multi-stage ML inference for VPN/intent classification",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    root_path="/api"
 )
 
 

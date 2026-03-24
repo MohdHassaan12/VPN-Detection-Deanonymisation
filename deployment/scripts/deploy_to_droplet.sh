@@ -60,6 +60,7 @@ rsync -avz --progress \
   --exclude 'LL MIT VNAT Dataset' \
   --exclude '.DS_Store' \
   --exclude '.env' \
+  --exclude 'pretrained_model.bin' \
   "$PROJECT_ROOT/" "$USERNAME@$DROPLET_IP:$REMOTE_DIR/"
 
 # ── Step 3: Copy .env ────────────────────────────────────────────────────────

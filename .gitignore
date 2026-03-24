@@ -1,9 +1,18 @@
 .DS_Store
 .venv/
+.venv_tf/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Datasets and external dependencies
+datasets/
+ET-BERT-*/
+
+# ET-BERT training outputs
+model_training/stage1_etbert_classifier/data/
+model_training/stage1_etbert_classifier/models/
 
 # Large datasets / captures / logs (do not commit)
 CIC-IDS2017/

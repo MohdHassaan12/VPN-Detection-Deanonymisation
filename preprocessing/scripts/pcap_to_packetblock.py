@@ -42,10 +42,14 @@ def parse_pcap_packets(pcap_path):
     """
     for pkt_data, pkt_meta in RawPcapReader(pcap_path):
         ts = float(pkt_meta.sec) + float(pkt_meta.usec) / 1_000_000.0
+        from scapy.layers.l2 import Ether
         try:
-            pkt = IP(pkt_data)
+            eth = Ether(pkt_data)
+            if not eth.haslayer(IP):
+                continue
+            pkt = eth[IP]
         except Exception:
-            # not an IP packet
+            # not an Ethernet/IP packet
             continue
         pkt_len = len(pkt_data)
         if pkt.haslayer(TCP):

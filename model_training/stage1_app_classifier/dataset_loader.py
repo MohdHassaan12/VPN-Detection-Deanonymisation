@@ -16,7 +16,8 @@ class PacketBlockLoader:
         print(f"Loading manifest from {self.manifest_path}...")
         df = pd.read_csv(self.manifest_path)
         
-        # Determine labels
+        # Determine labels from filename 
+        df['app_label'] = df['image_filename'].apply(lambda x: x.split('_')[1].replace('.pcap', ''))
         labels = df['app_label'].unique()
         self.label_map = {label: i for i, label in enumerate(labels)}
         print(f"Found {len(labels)} classes: {self.label_map}")
@@ -26,14 +27,14 @@ class PacketBlockLoader:
         
         print(f"Loading {len(df)} images...")
         for _, row in df.iterrows():
-            img_path = os.path.join(self.image_dir, row['image_file'])
+            img_path = os.path.join(self.image_dir, row['image_filename'])
             if not os.path.exists(img_path):
                 continue
                 
             try:
                 img = Image.open(img_path).convert('RGB')
                 img = img.resize((self.img_size, self.img_size))
-                img_array = np.array(img) / 255.0  # Normalize to [0,1]
+                img_array = np.array(img, dtype=np.float32) / 255.0  # Normalize to [0,1]
                 
                 X.append(img_array)
                 y.append(self.label_map[row['app_label']])

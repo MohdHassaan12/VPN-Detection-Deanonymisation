@@ -16,6 +16,7 @@ export const DashboardDataProvider = ({ children }) => {
     // so we don't reset it if the provider re-renders for some reason.
     const isInitialized = useRef(false);
     const wsRef = useRef(null);
+    const isUnmounted = useRef(false);
 
     useEffect(() => {
         if (!isInitialized.current) {
@@ -114,8 +115,10 @@ export const DashboardDataProvider = ({ children }) => {
             };
 
             ws.onclose = () => {
-                console.log("WebSocket disconnected. Reconnecting in 3s...");
-                setTimeout(connectWebSocket, 3000);
+                if (!isUnmounted.current) {
+                    console.log("WebSocket disconnected. Reconnecting in 3s...");
+                    setTimeout(connectWebSocket, 3000);
+                }
             };
 
             wsRef.current = ws;
@@ -125,10 +128,10 @@ export const DashboardDataProvider = ({ children }) => {
         const ws = connectWebSocket();
 
         return () => {
-            // We intentionally do NOT close the WebSocket here!
-            // This useEffect runs once globally because we will mount this provider high in App.jsx.
-            // Leaving the socket open means data continues streaming even when not on the Dashboard view.
-            // We only close if the whole browser tab is shut.
+            isUnmounted.current = true;
+            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.close();
+            }
         };
     }, []);
 

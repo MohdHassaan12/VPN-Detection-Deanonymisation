@@ -35,8 +35,9 @@ export const AuthProvider = ({ children }) => {
             const apiBase = import.meta.env.VITE_API_BASE_URL || '';
             const response = await fetch(`${apiBase}/api/auth/login`, {
                 method: 'POST',
-                // Do NOT set Content-Type manually — URLSearchParams sets it correctly
-                // (with charset) automatically. Overriding it can break some servers.
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
                 body: formData
             });
 
