@@ -308,7 +308,6 @@ This is a research/academic project. Contributions welcome:
 ## 👤 Author
 
 **MD Hassan**  
-[Your Contact Information]
 
 ---
 
@@ -320,7 +319,7 @@ This is a research/academic project. Contributions welcome:
 
 ---
 
-**Last Updated**: November 9, 2025  
+**Last Updated**: March 19, 2026  
 **Version**: 1.0.0
 
 ---
