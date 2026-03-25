@@ -1,6 +1,25 @@
-# VPN Detection & Deanonymisation Project
+<div align="center">
 
-A production-ready, multi-layer ML pipeline for detecting and classifying VPN traffic with risk-based policy enforcement.
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=30&pause=1000&color=00F7FF&center=true&vCenter=true&width=800&lines=VPN+Detection+%26+Deanonymisation;4-Layer+ML+Inspection+Pipeline;Privacy-First+Risk+Scoring+Engine;Real-Time+Traffic+Classification" alt="Typing SVG" />
+
+<br/>
+
+![Python](https://img.shields.io/badge/Python-3.9+-blue?style=for-the-badge&logo=python&logoColor=white)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange?style=for-the-badge&logo=tensorflow&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-Latest-red?style=for-the-badge&logo=xgboost&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Containerised-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-Native-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+
+<br/>
+
+> **A production-ready, multi-layer ML pipeline for detecting and classifying VPN traffic with risk-based policy enforcement — capable of identifying application type, scoring malicious intent (0–99), and enforcing adaptive ALLOW / CHALLENGE / BLOCK decisions in under 200ms.**
+
+</div>
+
+---
 
 ---
 
