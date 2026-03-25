@@ -295,20 +295,30 @@ Takes the 25-feature flow vector **plus** the Stage-1 predicted app class and ou
 
 ## 📸 Screenshots & Demo
 
-### Live Dashboard — Overview
+### 🖥️ Overview — Live Traffic Dashboard
 
 The interactive React + Vite dashboard provides real-time traffic analytics, policy management, and a hands-on traffic simulator:
 
-![Live Dashboard Demo](docs/dashboard_demo.webp)
+![VPN Detection Dashboard Overview](docs/dashboard_screenshot.png)
 
-*The demo above shows navigation across Overview, Analytics & Deanonymisation, Policy Engine, and the Interactive Traffic Simulator. Live charts update via WebSocket stream at sub-200ms latency.*
+*Real-time stat cards, live traffic volume chart, risk score distribution, and per-flow decision log — all updating via WebSocket stream at sub-200ms latency.*
 
-### Dashboard Pages
+---
+
+### 🔬 Analytics & Deanonymisation Page
+
+![Analytics & Deanonymisation](docs/analytics_screenshot.png)
+
+*Top deanonymised apps breakdown, VPN traffic origin world heatmap, flagged session table (with VPN provider attribution), and 24h session trend chart.*
+
+---
+
+### Dashboard Pages Summary
 
 | Page | Description |
 |------|-------------|
 | **Overview** | System health, live throughput, real-time risk score distribution, recent decisions |
-| **Analytics & Deanonymisation** | Per-app breakdown, VPN provider attribution, time-series anomaly charts |
+| **Analytics & Deanonymisation** | Per-app breakdown, VPN provider attribution, world origin heatmap, time-series anomaly charts |
 | **Policy Engine** | Configure ALLOW/CHALLENGE/BLOCK thresholds, whitelist trusted IPs, view audit log |
 | **Traffic Simulator** | Manually craft packet flows, run them through the full ML pipeline, inspect the step-by-step decision trace |
 
