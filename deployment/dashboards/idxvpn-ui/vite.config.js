@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/VPN-Detection-Deanoymisation/',
+  base: '/VPN-Detection-Deanonymisation/',
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
