@@ -121,13 +121,20 @@ async def lifespan(app: FastAPI):
         logger.warning(f"Failed to connect to Redis: {e}. Caching disabled.")
         redis_client = None
         
-    # Start traffic simulation
-    sim_task = asyncio.create_task(simulate_traffic_task())
-    
+    # Start traffic simulation only if not in live capture mode
+    is_live_mode = os.getenv("LIVE_CAPTURE_MODE", "False").lower() == "true"
+    sim_task = None
+    if not is_live_mode:
+        logger.info("LIVE_CAPTURE_MODE is False. Starting internal traffic simulator.")
+        sim_task = asyncio.create_task(simulate_traffic_task())
+    else:
+        logger.info("LIVE_CAPTURE_MODE is True. Awaiting genuine packets via /predict API...")
+
     yield
-    
+
     # Shutdown: Close connections
-    sim_task.cancel()
+    if sim_task:
+        sim_task.cancel()
     if redis_client:
         await redis_client.close()
     logger.info("Inference service shut down")

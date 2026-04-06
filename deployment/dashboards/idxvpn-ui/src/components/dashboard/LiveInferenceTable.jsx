@@ -39,7 +39,7 @@ const LiveInferenceTable = ({ logs }) => {
             >
                 <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
                     <Activity size={20} style={{ color: 'var(--accent-blue)' }} />
-                    Live Inference Stream
+                    Live Wireshark Packet Stream
                     {/* live pulse dot */}
                     <span
                         className="w-2 h-2 rounded-full animate-pulse ml-1"
@@ -80,7 +80,7 @@ const LiveInferenceTable = ({ logs }) => {
                                     <div className="flex flex-col items-center gap-3">
                                         <Wifi size={28} style={{ color: 'var(--text-muted)' }} className="animate-pulse" />
                                         <span style={{ color: 'var(--text-muted)' }} className="text-sm">
-                                            Connecting to packet stream…
+                                            Awaiting Wireshark Live Traffic…
                                         </span>
                                     </div>
                                 </td>

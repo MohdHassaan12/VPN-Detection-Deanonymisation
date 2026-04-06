@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import DashboardView from './components/dashboard/DashboardView';
+import CommandCenter from './components/detection/CommandCenter';
+import IdentityProfiling from './components/detection/IdentityProfiling';
 import AnalyticsView from './components/analytics/AnalyticsView';
 import InteractiveSimulator from './components/detection/InteractiveSimulator';
 import PoliciesView from './components/policies/PoliciesView';
@@ -21,6 +23,10 @@ function App() {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardView />;
+      case 'command-center':
+        return <CommandCenter />;
+      case 'identity-profiling':
+        return <IdentityProfiling />;
       case 'analytics':
         return <AnalyticsView />;
       case 'policies':

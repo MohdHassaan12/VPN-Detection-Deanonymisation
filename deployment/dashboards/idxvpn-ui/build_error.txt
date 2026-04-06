@@ -1,0 +1,23 @@
+
+> idxvpn-ui@0.0.0 build
+> vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 24 modules transformed.
+✗ Build failed in 356ms
+error during build:
+[vite]: Rollup failed to resolve import "prop-types" from "/Users/mdhassan/Developer/VPN Detection & Deanoymisation/deployment/dashboards/idxvpn-ui/node_modules/react-simple-maps/dist/index.es.js".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`
+    at viteLog (file:///Users/mdhassan/Developer/VPN%20Detection%20&%20Deanoymisation/deployment/dashboards/idxvpn-ui/node_modules/vite/dist/node/chunks/config.js:33635:57)
+    at file:///Users/mdhassan/Developer/VPN%20Detection%20&%20Deanoymisation/deployment/dashboards/idxvpn-ui/node_modules/vite/dist/node/chunks/config.js:33669:73
+    at onwarn (file:///Users/mdhassan/Developer/VPN%20Detection%20&%20Deanoymisation/deployment/dashboards/idxvpn-ui/node_modules/@vitejs/plugin-react/dist/index.js:76:7)
+    at file:///Users/mdhassan/Developer/VPN%20Detection%20&%20Deanoymisation/deployment/dashboards/idxvpn-ui/node_modules/vite/dist/node/chunks/config.js:33669:28
+    at onRollupLog (file:///Users/mdhassan/Developer/VPN%20Detection%20&%20Deanoymisation/deployment/dashboards/idxvpn-ui/node_modules/vite/dist/node/chunks/config.js:33664:63)
+    at onLog (file:///Users/mdhassan/Developer/VPN%20Detection%20&%20Deanoymisation/deployment/dashboards/idxvpn-ui/node_modules/vite/dist/node/chunks/config.js:33467:4)
+    at file:///Users/mdhassan/Developer/VPN%20Detection%20&%20Deanoymisation/deployment/dashboards/idxvpn-ui/node_modules/rollup/dist/es/shared/node-entry.js:20958:32
+    at Object.logger [as onLog] (file:///Users/mdhassan/Developer/VPN%20Detection%20&%20Deanoymisation/deployment/dashboards/idxvpn-ui/node_modules/rollup/dist/es/shared/node-entry.js:22945:9)
+    at ModuleLoader.handleInvalidResolvedId (file:///Users/mdhassan/Developer/VPN%20Detection%20&%20Deanoymisation/deployment/dashboards/idxvpn-ui/node_modules/rollup/dist/es/shared/node-entry.js:21689:26)
+    at file:///Users/mdhassan/Developer/VPN%20Detection%20&%20Deanoymisation/deployment/dashboards/idxvpn-ui/node_modules/rollup/dist/es/shared/node-entry.js:21647:26

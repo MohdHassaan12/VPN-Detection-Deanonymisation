@@ -12,3 +12,8 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 python-jose[cryptography]
 python-multipart
+scapy==2.5.0
+requests==2.31.0
+
+pyshark==0.6.0
+pandas==2.2.0

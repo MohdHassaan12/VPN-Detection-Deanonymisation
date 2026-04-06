@@ -1,11 +1,13 @@
 import React from 'react';
-import { LayoutDashboard, BarChart2, Shield, Settings, Activity, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, BarChart2, Shield, Settings, Activity, LogOut, User, Globe, Fingerprint } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
     { id: 'dashboard', label: 'Dashboard',                   icon: LayoutDashboard },
-    { id: 'analytics', label: 'Analytics & Deanonymisation', icon: BarChart2 },
+    { id: 'command-center', label: 'Command Center',         icon: Globe },
+    { id: 'identity-profiling', label: 'Deanonymisation Core', icon: Fingerprint },
+    { id: 'analytics', label: 'Analytics', icon: BarChart2 },
     { id: 'policies',  label: 'Policies',                    icon: Shield },
     { id: 'detection', label: 'Interactive Detection',       icon: Activity },
     { id: 'settings',  label: 'Settings',                    icon: Settings },

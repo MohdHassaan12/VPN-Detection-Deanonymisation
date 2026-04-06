@@ -34,11 +34,17 @@ def build_stage2_features(features, app_class: str, app_confidence: float) -> np
     feature_vector = []
     
     raw_dict = features.raw_features or {}
+    # Create a stripped version of the raw dict for forgiving lookups
+    stripped_raw = {k.strip().lower(): v for k, v in raw_dict.items()}
     
     for fname in feature_names:
-        # Some basic fallbacks for things not explicitly provided
-        val = raw_dict.get(fname)
+        clean_name = fname.strip().lower()
         
+        # Try exact match first, then stripped/lower match
+        val = raw_dict.get(fname)
+        if val is None:
+            val = stripped_raw.get(clean_name)
+            
         if val is None:
             # Check edge layer attrs if present
             if fname == 'Protocol' and features.protocol:
