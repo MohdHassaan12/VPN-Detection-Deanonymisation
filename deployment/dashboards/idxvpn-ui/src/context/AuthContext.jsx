@@ -25,7 +25,46 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
+    // Demo credentials — seeded with defaults plus any locally registered users
+    const getUsers = () => {
+        const stored = JSON.parse(localStorage.getItem('idxvpn-registered-users') || '{}');
+        return {
+            admin:  { password: 'admin123',  role: 'admin'  },
+            viewer: { password: 'viewer123', role: 'viewer' },
+            ...stored,
+        };
+    };
+
+    /** Create a minimal mock JWT (unsigned) for local sessions */
+    const makeMockToken = (username, role) => {
+        const header = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }));
+        const payload = btoa(JSON.stringify({ sub: username, role, exp: Math.floor(Date.now() / 1000) + 86400 }));
+        return `${header}.${payload}.mock`;
+    };
+
+    const register = async ({ username, password, fullName, email, role = 'viewer' }) => {
+        const users = getUsers();
+        if (users[username]) {
+            return { success: false, message: `Username "${username}" is already taken. Please choose another.` };
+        }
+        // Persist to localStorage (demo mode — no backend)
+        const stored = JSON.parse(localStorage.getItem('idxvpn-registered-users') || '{}');
+        stored[username] = { password, role, fullName, email };
+        localStorage.setItem('idxvpn-registered-users', JSON.stringify(stored));
+        return { success: true };
+    };
+
     const login = async (username, password) => {
+        // --- 1. Try local demo credentials first (works offline / without backend) ---
+        const demoUser = getUsers()[username];
+        if (demoUser && demoUser.password === password) {
+            const token = makeMockToken(username, demoUser.role);
+            localStorage.setItem('token', token);
+            setUser({ username, role: demoUser.role });
+            return true;
+        }
+
+        // --- 2. Fall back to live backend if credentials don't match local demos ---
         try {
             const formData = new URLSearchParams();
             formData.append('username', username);
@@ -68,7 +107,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, register, isAuthenticated: !!user, loading }}>
             {children}
         </AuthContext.Provider>
     );

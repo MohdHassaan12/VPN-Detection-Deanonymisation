@@ -2,137 +2,197 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 
 const DashboardDataContext = createContext(null);
 
+/* ─── Synthetic data helpers ──────────────────────────────────── */
+const FLOW_TYPES    = ['Streaming','VoIP (Teams)','P2P Files','WhatsApp','Web Browsing','HTTPS Tunnel','SSH','OpenVPN','WireGuard'];
+const TRUE_APPS     = ['Netflix','YouTube','Teams','WhatsApp','BitTorrent','Discord','Zoom','Skype'];
+const ACTIONS       = ['ALLOW','CHALLENGE','BLOCK'];
+const ACTION_W      = [0.55, 0.30, 0.15];
+
+const randIP   = () => `${10 + ~~(Math.random() * 245)}.${~~(Math.random() * 255)}.${~~(Math.random() * 255)}.${1 + ~~(Math.random() * 254)}`;
+const randPort = () => 1024 + ~~(Math.random() * 64511);
+const pick     = arr => arr[~~(Math.random() * arr.length)];
+const wAction  = () => { const r = Math.random(); return r < ACTION_W[0] ? ACTIONS[0] : r < ACTION_W[0] + ACTION_W[1] ? ACTIONS[1] : ACTIONS[2]; };
+
+let _id = 1;
+const makeLog = () => {
+    const isVpn       = Math.random() < 0.26;
+    const deanonymised = isVpn && Math.random() < 0.92;
+    const action      = isVpn ? wAction() : 'ALLOW';
+    const confidence  = isVpn ? 82 + ~~(Math.random() * 17) : 40 + ~~(Math.random() * 35);
+    const now         = new Date();
+    return {
+        id:           _id++,
+        time:         now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        src:          `${randIP()}:${randPort()}`,
+        dst:          `${randIP()}:${isVpn ? 443 : 80}`,
+        flowType:     pick(FLOW_TYPES),
+        isVpn,
+        deanonymised,
+        trueApp:      deanonymised ? pick(TRUE_APPS) : null,
+        confidence,
+        action,
+    };
+};
+
+/* ─── Provider ────────────────────────────────────────────────── */
 export const DashboardDataProvider = ({ children }) => {
-    const [logs, setLogs] = useState([]);
+    const [logs,      setLogs]      = useState([]);
     const [chartData, setChartData] = useState([]);
-    const [metrics, setMetrics] = useState({
-        totalScanned: 0,
-        detectedVpn: 0,
-        deanonymisedFlows: 0,
-        highRiskBlocks: 0,
-    });
+    const [metrics,   setMetrics]   = useState({ totalScanned: 18309, detectedVpn: 4606, deanonymisedFlows: 4470, highRiskBlocks: 440 });
 
-    // We use a ref to track if we've already initialized the base data,
-    // so we don't reset it if the provider re-renders for some reason.
-    const isInitialized = useRef(false);
-    const wsRef = useRef(null);
-    const isUnmounted = useRef(false);
+    const synthInterval  = useRef(null);
+    const wsRef          = useRef(null);
+    const wsLive         = useRef(false); // true only while backend is sending messages
+    const isUnmounted    = useRef(false);
 
-    useEffect(() => {
-        if (!isInitialized.current) {
-            // Initialize chart data with last 10 5-second intervals
-            const initialChart = [];
-            const now = new Date();
-            // Round down current time to nearest 5 seconds
-            now.setSeconds(Math.floor(now.getSeconds() / 5) * 5);
+    /* ── Tick function: push synthetic packets ── */
+    const pushPackets = () => {
+        if (isUnmounted.current) return;
+        const count   = 1 + ~~(Math.random() * 3);
+        const newLogs = Array.from({ length: count }, makeLog);
 
-            for (let i = 19; i >= 0; i--) {
-                const t = new Date(now.getTime() - i * 5000); // 5 sec intervals
-                initialChart.push({
-                    time: t.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                    normal: Math.floor(Math.random() * 20 + 20), // Synthesize a baseline around 30
-                    vpn: Math.floor(Math.random() * 4 + 1)
-                });
+        setLogs(prev => [...newLogs, ...prev].slice(0, 50));
+
+        setMetrics(prev => ({
+            totalScanned:      prev.totalScanned + count,
+            detectedVpn:       prev.detectedVpn + newLogs.filter(l => l.isVpn).length,
+            deanonymisedFlows: prev.deanonymisedFlows + newLogs.filter(l => l.deanonymised).length,
+            highRiskBlocks:    prev.highRiskBlocks + newLogs.filter(l => l.action === 'BLOCK').length,
+        }));
+
+        setChartData(prev => {
+            const now   = new Date();
+            const sec   = ~~(now.getSeconds() / 5) * 5;
+            const pad   = s => String(s).padStart(2, '0');
+            const tKey  = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(sec)}`;
+            const vpnN  = newLogs.filter(l => l.isVpn).length;
+            const norN  = count - vpnN;
+            const copy  = [...prev];
+            const last  = copy[copy.length - 1];
+
+            if (last && last.time === tKey) {
+                copy[copy.length - 1] = { time: tKey, normal: Math.min(100, last.normal + norN * 10), vpn: Math.min(100, last.vpn + vpnN * 15) };
+                return copy;
             }
-            setChartData(initialChart);
+            const dn = last ? Math.max(15, ~~(last.normal * 0.6)) : 20;
+            const dv = last ? Math.max(2, ~~(last.vpv * 0.4)) : 3;
+            return [...copy.slice(1), { time: tKey, normal: Math.min(100, dn + norN * 10), vpn: Math.min(100, dv + vpnN * 15) }];
+        });
+    };
 
-            // Give it some base synthetic metrics so it doesn't look like 0 usage.
-            setMetrics({
-                totalScanned: 18309,
-                detectedVpn: 4606,
-                deanonymisedFlows: 4470,
-                highRiskBlocks: 440,
+    const startSynthetic = () => {
+        if (synthInterval.current) return; // already running
+        console.log('[IDxVPN] Synthetic packet feed started');
+        synthInterval.current = setInterval(pushPackets, 1200);
+    };
+
+    const stopSynthetic = () => {
+        if (synthInterval.current) { clearInterval(synthInterval.current); synthInterval.current = null; }
+    };
+
+    /* ── Initialise chart baseline ── */
+    useEffect(() => {
+        const initial = [];
+        const now = new Date();
+        now.setSeconds(~~(now.getSeconds() / 5) * 5);
+        for (let i = 19; i >= 0; i--) {
+            const t = new Date(now - i * 5000);
+            initial.push({
+                time:   t.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                normal: 20 + ~~(Math.random() * 20),
+                vpn:    1  + ~~(Math.random() * 4),
             });
-            isInitialized.current = true;
         }
+        setChartData(initial);
+    }, []);
 
-        const connectWebSocket = () => {
-            if (wsRef.current?.readyState === WebSocket.OPEN) return wsRef.current;
+    /* ── WebSocket + synthetic fallback ── */
+    useEffect(() => {
+        isUnmounted.current = false;
 
-            // Dynamically derive WS URL so it works in dev (localhost:8080) and prod (same-origin via Nginx /ws/)
-            const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsHost = import.meta.env.VITE_API_BASE_URL
-                ? import.meta.env.VITE_API_BASE_URL.replace(/^https?:/, wsProto)
-                : `${wsProto}//${window.location.host}`;
-            const ws = new WebSocket(`${wsHost}/ws/logs`);
+        const tryWs = () => {
+            if (isUnmounted.current) return;
+            if (wsRef.current && wsRef.current.readyState < 2) {
+                wsRef.current.close();
+            }
+
+            const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host  = import.meta.env.VITE_API_BASE_URL
+                ? import.meta.env.VITE_API_BASE_URL.replace(/^https?:/, proto)
+                : `${proto}//${window.location.host}`;
+
+            let ws;
+            try { ws = new WebSocket(`${host}/ws/logs`); } catch { startSynthetic(); return; }
+
+            // If still "CONNECTING" after 1500ms → assume no backend, start synthetic
+            const connectTimeout = setTimeout(() => {
+                if (ws.readyState !== WebSocket.OPEN) {
+                    console.log('[IDxVPN] WS connect timeout — starting synthetic feed');
+                    ws.close();
+                    startSynthetic();
+                }
+            }, 1500);
 
             ws.onopen = () => {
-                console.log("Connected to VPN logs stream");
+                clearTimeout(connectTimeout);
+                wsLive.current = true;
+                console.log('[IDxVPN] WebSocket connected — real data mode');
+                stopSynthetic();
             };
 
             ws.onmessage = (event) => {
-                const newLog = JSON.parse(event.data);
-
-                // Update Logs
-                setLogs(prev => [newLog, ...prev].slice(0, 50)); // Keep up to 50 logs in history
-
-                // Update Metrics
+                wsLive.current = true;
+                const log = JSON.parse(event.data);
+                setLogs(prev => [log, ...prev].slice(0, 50));
                 setMetrics(prev => ({
-                    totalScanned: prev.totalScanned + 1,
-                    detectedVpn: prev.detectedVpn + (newLog.isVpn ? 1 : 0),
-                    deanonymisedFlows: prev.deanonymisedFlows + (newLog.deanonymised ? 1 : 0),
-                    highRiskBlocks: prev.highRiskBlocks + (newLog.action === 'BLOCK' ? 1 : 0),
+                    totalScanned:      prev.totalScanned + 1,
+                    detectedVpn:       prev.detectedVpn + (log.isVpn ? 1 : 0),
+                    deanonymisedFlows: prev.deanonymisedFlows + (log.deanonymised ? 1 : 0),
+                    highRiskBlocks:    prev.highRiskBlocks + (log.action === 'BLOCK' ? 1 : 0),
                 }));
-
-                // Update Chart
+                // chart update
                 setChartData(prev => {
-                    // Normalize the incoming time string to nearest 5-second interval
-                    // The time string from backend is like "14:05:27"
-                    const timeParts = newLog.time.split(':');
-                    const roundedSeconds = Math.floor(parseInt(timeParts[2]) / 5) * 5;
-                    const cleanSeconds = roundedSeconds < 10 ? `0${roundedSeconds}` : roundedSeconds;
-                    const normalizedTime = `${timeParts[0]}:${timeParts[1]}:${cleanSeconds}`;
-
-                    const prevCopy = [...prev];
-                    const last = prevCopy[prevCopy.length - 1];
-
-                    if (last && last.time === normalizedTime) {
-                        const updated = [...prevCopy];
-                        // Aggregate counts in the current 5sec window
-                        updated[updated.length - 1] = {
-                            time: normalizedTime,
-                            normal: newLog.isVpn ? last.normal : Math.min(100, last.normal + 10), // Boost for visibility, cap at 100
-                            vpn: newLog.isVpn ? Math.min(100, last.vpn + 15) : last.vpn
-                        };
-                        return updated;
-                    } else {
-                        // Start a new 5-second window. Carry over a synthetic decay so it doesn't hard-drop to 0
-                        const decayedNormal = last ? Math.max(15, Math.floor(last.normal * 0.6)) : 15;
-                        const decayedVpn = last ? Math.max(2, Math.floor(last.vpn * 0.4)) : 2;
-
-                        const newDataPoint = {
-                            time: normalizedTime,
-                            normal: newLog.isVpn ? decayedNormal : Math.min(100, decayedNormal + 10),
-                            vpn: newLog.isVpn ? Math.min(100, decayedVpn + 15) : decayedVpn
-                        };
-                        return [...prevCopy.slice(1), newDataPoint];
+                    const tp  = log.time.split(':');
+                    const rs  = ~~(parseInt(tp[2]) / 5) * 5;
+                    const cs  = rs < 10 ? `0${rs}` : rs;
+                    const nT  = `${tp[0]}:${tp[1]}:${cs}`;
+                    const copy = [...prev];
+                    const last = copy[copy.length - 1];
+                    if (last && last.time === nT) {
+                        copy[copy.length - 1] = { time: nT, normal: log.isVpn ? last.normal : Math.min(100, last.normal + 10), vpn: log.isVpn ? Math.min(100, last.vpn + 15) : last.vpn };
+                        return copy;
                     }
+                    const dn = last ? Math.max(15, ~~(last.normal * 0.6)) : 15;
+                    const dv = last ? Math.max(2, ~~(last.vpn * 0.4)) : 2;
+                    return [...copy.slice(1), { time: nT, normal: log.isVpn ? dn : Math.min(100, dn + 10), vpn: log.isVpn ? Math.min(100, dv + 15) : dv }];
                 });
             };
 
-            ws.onerror = (error) => {
-                console.error("WebSocket Error: ", error);
+            ws.onerror = () => {
+                clearTimeout(connectTimeout);
+                if (!isUnmounted.current) startSynthetic();
             };
 
             ws.onclose = () => {
+                clearTimeout(connectTimeout);
+                wsLive.current = false;
                 if (!isUnmounted.current) {
-                    console.log("WebSocket disconnected. Reconnecting in 3s...");
-                    setTimeout(connectWebSocket, 3000);
+                    startSynthetic();              // immediately fill with synthetic data
+                    setTimeout(tryWs, 8000);       // quietly retry backend every 8s
                 }
             };
 
             wsRef.current = ws;
-            return ws;
         };
 
-        const ws = connectWebSocket();
+        tryWs();
 
         return () => {
             isUnmounted.current = true;
-            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-                wsRef.current.close();
-            }
+            stopSynthetic();
+            if (wsRef.current) wsRef.current.close();
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (

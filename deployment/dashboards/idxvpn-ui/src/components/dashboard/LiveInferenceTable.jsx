@@ -1,85 +1,184 @@
 import React, { useState, useEffect } from 'react';
-import { Activity } from 'lucide-react';
+import { Activity, Wifi } from 'lucide-react';
 
 const LiveInferenceTable = ({ logs }) => {
+    // Tick the "last updated" timestamp every second
+    const [now, setNow] = useState(new Date());
+    useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(t);
+    }, []);
+
     const getActionBadge = (action) => {
-        switch (action) {
-            case 'ALLOW': return <span className="bg-[#1bc553]/10 text-[#1bc553] px-3 py-1 rounded-full text-xs font-bold border border-[#1bc553]/20">ALLOW</span>;
-            case 'CHALLENGE': return <span className="bg-[#ff9900]/10 text-[#ff9900] px-3 py-1 rounded-full text-xs font-bold border border-[#ff9900]/20">CHALLENGE</span>;
-            case 'BLOCK': return <span className="bg-[#ff5050]/10 text-[#ff5050] px-3 py-1 rounded-full text-xs font-bold border border-[#ff5050]/20">BLOCK</span>;
-            default: return null;
-        }
+        const styles = {
+            ALLOW:     { bg: 'hsla(152,70%,45%,0.10)', color: 'var(--accent-green)',  border: 'hsla(152,70%,45%,0.30)' },
+            CHALLENGE: { bg: 'hsla(35,95%,58%,0.10)',  color: 'var(--accent-orange)', border: 'hsla(35,95%,58%,0.30)' },
+            BLOCK:     { bg: 'hsla(350,75%,55%,0.10)', color: 'var(--accent-red)',    border: 'hsla(350,75%,55%,0.30)' },
+        };
+        const s = styles[action];
+        if (!s) return null;
+        return (
+            <span
+                className="px-3 py-1 rounded-full text-xs font-bold"
+                style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
+            >
+                {action}
+            </span>
+        );
     };
 
     return (
-        <div className="glass-panel rounded-2xl border border-divider overflow-hidden">
-            <div className="p-6 border-b border-divider flex justify-between items-center bg-panel">
-                <h3 className="text-lg font-bold flex items-center gap-2">
-                    <Activity size={20} className="text-[#4f8fff]" />
+        <div
+            className="glass-panel rounded-2xl overflow-hidden"
+            style={{ border: '1px solid var(--border)' }}
+        >
+            {/* Header */}
+            <div
+                className="p-5 flex justify-between items-center"
+                style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}
+            >
+                <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                    <Activity size={20} style={{ color: 'var(--accent-blue)' }} />
                     Live Inference Stream
+                    {/* live pulse dot */}
+                    <span
+                        className="w-2 h-2 rounded-full animate-pulse ml-1"
+                        style={{ background: 'var(--accent-green)', boxShadow: '0 0 6px var(--accent-green)' }}
+                    />
                 </h3>
-                <span className="text-xs text-muted font-mono bg-black/5 dark:bg-black/40 px-3 py-1 rounded-full border border-divider">
-                    Last updated: {new Date().toLocaleTimeString()}
+                <span
+                    className="text-xs font-mono px-3 py-1 rounded-full"
+                    style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+                >
+                    Last updated: {now.toLocaleTimeString('en-US', { hour12: false })}
                 </span>
             </div>
 
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse whitespace-nowrap">
                     <thead>
-                        <tr className="bg-black/5 dark:bg-white/5 text-muted text-xs uppercase tracking-wider">
-                            <th className="p-4 border-b border-divider font-medium">Time</th>
-                            <th className="p-4 border-b border-divider font-medium">Source / Dest</th>
-                            <th className="p-4 border-b border-divider font-medium">Flow Type</th>
-                            <th className="p-4 border-b border-divider font-medium text-center">Is VPN?</th>
-                            <th className="p-4 border-b border-divider font-medium text-center">Deanonymised?</th>
-                            <th className="p-4 border-b border-divider font-medium">CNN Conf.</th>
-                            <th className="p-4 border-b border-divider font-medium text-right">Action</th>
+                        <tr style={{ background: 'var(--bg-surface-hover)' }}>
+                            {['Time', 'Source / Dest', 'Flow Type', 'Is VPN?', 'Deanonymised?', 'CNN Conf.', 'Action'].map((h, i) => (
+                                <th
+                                    key={h}
+                                    className="p-4 text-xs uppercase tracking-wider font-semibold"
+                                    style={{
+                                        borderBottom: '1px solid var(--border)',
+                                        color: 'var(--text-muted)',
+                                        textAlign: i >= 5 ? 'right' : i === 3 || i === 4 ? 'center' : 'left',
+                                    }}
+                                >
+                                    {h}
+                                </th>
+                            ))}
                         </tr>
                     </thead>
-                    <tbody className="font-mono text-sm max-h-[300px] overflow-y-auto w-full">
-                        {logs && logs.map((log) => (
-                            <tr key={log.id} className="border-b border-divider hover:bg-black/5 dark:bg-white/5 transition-colors animate-fade-in-up">
-                                <td className="p-4 text-muted text-xs">{log.time}</td>
-                                <td className="p-4">
-                                    <div className="flex flex-col">
-                                        <span className="text-default">{log.src}</span>
-                                        <span className="text-muted text-xs">→ {log.dst}</span>
+                    <tbody>
+                        {(!logs || logs.length === 0) ? (
+                            <tr>
+                                <td colSpan={7} className="text-center py-16">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Wifi size={28} style={{ color: 'var(--text-muted)' }} className="animate-pulse" />
+                                        <span style={{ color: 'var(--text-muted)' }} className="text-sm">
+                                            Connecting to packet stream…
+                                        </span>
                                     </div>
                                 </td>
-                                <td className="p-4 font-bold text-default tracking-wide">{log.flowType}</td>
+                            </tr>
+                        ) : logs.map((log) => (
+                            <tr
+                                key={log.id}
+                                className="transition-colors animate-fade-in-up"
+                                style={{ borderBottom: '1px solid var(--border)' }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-surface-hover)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                                {/* Time */}
+                                <td className="p-4 text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+                                    {log.time}
+                                </td>
+
+                                {/* Source / Dest */}
+                                <td className="p-4 font-mono text-xs">
+                                    <div style={{ color: 'var(--text-primary)' }}>{log.src}</div>
+                                    <div style={{ color: 'var(--text-muted)' }}>→ {log.dst}</div>
+                                </td>
+
+                                {/* Flow Type */}
+                                <td className="p-4 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                    {log.flowType}
+                                </td>
+
+                                {/* Is VPN? */}
                                 <td className="p-4 text-center">
                                     {log.isVpn ? (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#ff9900]/10 text-[#ff9900] border border-[#ff9900]/20">YES</span>
+                                        <span
+                                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                            style={{ background: 'hsla(35,95%,58%,0.10)', color: 'var(--accent-orange)', border: '1px solid hsla(35,95%,58%,0.25)' }}
+                                        >
+                                            YES
+                                        </span>
                                     ) : (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-black/5 dark:bg-white/5 text-muted border border-divider">NO</span>
+                                        <span
+                                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                            style={{ background: 'var(--bg-input)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                                        >
+                                            NO
+                                        </span>
                                     )}
                                 </td>
+
+                                {/* Deanonymised? */}
                                 <td className="p-4 text-center">
                                     {log.isVpn && log.deanonymised ? (
-                                        <div className="flex flex-col items-center">
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#1bc553]/10 text-[#1bc553] border border-[#1bc553]/20 mb-1">YES</span>
-                                            <span className="text-xs text-[#4f8fff] font-bold">{log.trueApp}</span>
+                                        <div className="flex flex-col items-center gap-0.5">
+                                            <span
+                                                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                                style={{ background: 'hsla(152,70%,45%,0.10)', color: 'var(--accent-green)', border: '1px solid hsla(152,70%,45%,0.25)' }}
+                                            >
+                                                YES
+                                            </span>
+                                            <span className="text-xs font-bold" style={{ color: 'var(--accent-blue)' }}>
+                                                {log.trueApp}
+                                            </span>
                                         </div>
                                     ) : log.isVpn && !log.deanonymised ? (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#ff5050]/10 text-[#ff5050] border border-[#ff5050]/20">FAILED</span>
+                                        <span
+                                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                            style={{ background: 'hsla(350,75%,55%,0.10)', color: 'var(--accent-red)', border: '1px solid hsla(350,75%,55%,0.25)' }}
+                                        >
+                                            FAILED
+                                        </span>
                                     ) : (
-                                        <span className="text-muted text-xs">-</span>
+                                        <span style={{ color: 'var(--text-muted)' }} className="text-xs">—</span>
                                     )}
                                 </td>
-                                <td className="p-4">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-12 h-1.5 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden hidden sm:block">
+
+                                {/* CNN Conf */}
+                                <td className="p-4 text-right">
+                                    <div className="flex items-center justify-end gap-2">
+                                        <div
+                                            className="w-12 h-1.5 rounded-full overflow-hidden hidden sm:block"
+                                            style={{ background: 'var(--border)' }}
+                                        >
                                             <div
-                                                className="h-full bg-gradient-to-r from-[#2555ff] to-[#4f8fff]"
-                                                style={{ width: `${log.confidence}%` }}
-                                            ></div>
+                                                className="h-full rounded-full"
+                                                style={{
+                                                    width: `${log.confidence}%`,
+                                                    background: log.confidence > 85
+                                                        ? 'linear-gradient(90deg, var(--accent-blue), var(--accent-purple))'
+                                                        : 'linear-gradient(90deg, var(--accent-orange), var(--accent-red))',
+                                                }}
+                                            />
                                         </div>
-                                        <span className="text-xs">{log.confidence}%</span>
+                                        <span className="text-xs font-mono" style={{ color: 'var(--text-primary)' }}>
+                                            {log.confidence}%
+                                        </span>
                                     </div>
                                 </td>
-                                <td className="p-4 text-right">
-                                    {getActionBadge(log.action)}
-                                </td>
+
+                                {/* Action */}
+                                <td className="p-4 text-right">{getActionBadge(log.action)}</td>
                             </tr>
                         ))}
                     </tbody>

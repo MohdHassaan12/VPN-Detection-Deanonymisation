@@ -1,7 +1,7 @@
 import React from 'react';
 import LiveMetricsCards from './LiveMetricsCards';
 import LiveInferenceTable from './LiveInferenceTable';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import ReactECharts from 'echarts-for-react';
 import { useDashboardData } from '../../context/DashboardDataContext';
 
@@ -54,14 +54,34 @@ const DashboardView = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center bg-[#151923]/80 p-6 rounded-2xl border border-[#ffffff1a] glass-panel">
+            <div
+                className="flex justify-between items-center p-6 rounded-2xl glass-panel transition-colors duration-300"
+                style={{ border: '1px solid var(--border)' }}
+            >
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">Real-Time VPN Classification</h2>
-                    <p className="text-[#a0aabf]">Monitoring Stage 1 CNN and Stage 2 Random Forest inference limits.</p>
+                    <h2
+                        className="text-3xl font-bold tracking-tight pb-1"
+                        style={{ color: 'var(--text-primary)' }}
+                    >
+                        Real-Time VPN Classification
+                    </h2>
+                    <p style={{ color: 'var(--text-secondary)' }} className="font-medium">
+                        Monitoring Stage 1 CNN and Stage 2 Random Forest inference limits.
+                    </p>
                 </div>
                 <div className="flex gap-4">
-                    <div className="px-4 py-2 rounded-lg bg-[#1bc553]/10 text-[#1bc553] border border-[#1bc553]/20 flex items-center gap-2 font-medium">
-                        <span className="w-2 h-2 rounded-full bg-[#1bc553] animate-pulse"></span>
+                    <div
+                        className="px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm"
+                        style={{
+                            background: 'hsla(152,70%,45%,0.10)',
+                            color:  'var(--accent-green)',
+                            border: '1px solid hsla(152,70%,45%,0.25)',
+                        }}
+                    >
+                        <span
+                            className="w-2 h-2 rounded-full animate-pulse"
+                            style={{ background: 'var(--accent-green)' }}
+                        />
                         Pipeline Active
                     </div>
                 </div>
@@ -70,22 +90,34 @@ const DashboardView = () => {
             <LiveMetricsCards metrics={metrics} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-[#ffffff1a] relative overflow-hidden group">
-                    {/* Decorative glow */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#4f8fff] opacity-5 rounded-full blur-3xl -z-10 group-hover:opacity-10 transition-opacity duration-700"></div>
-                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#ff9900] opacity-5 rounded-full blur-3xl -z-10 group-hover:opacity-10 transition-opacity duration-700"></div>
+                <div
+                    className="lg:col-span-2 glass-panel p-6 rounded-2xl relative overflow-hidden group"
+                    style={{ border: '1px solid var(--border)' }}
+                >
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#4f8fff] opacity-5 rounded-full blur-3xl -z-10 group-hover:opacity-10 transition-opacity duration-700" />
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#ff9900] opacity-5 rounded-full blur-3xl -z-10 group-hover:opacity-10 transition-opacity duration-700" />
 
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-[#a0aabf] font-medium tracking-wide">Live Traffic Volume</h3>
-                        <div className="flex items-center gap-4 text-xs font-medium">
-                            <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#4f8fff] shadow-[0_0_8px_#4f8fff]"></div> Normal</span>
-                            <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#ff9900] shadow-[0_0_8px_#ff9900]"></div> VPN</span>
+                        <h3 className="font-medium tracking-wide" style={{ color: 'var(--text-secondary)' }}>Live Traffic Volume</h3>
+                        <div className="flex items-center gap-4 text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                            <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full" style={{ background: 'var(--accent-blue)', boxShadow: '0 0 8px var(--accent-blue)' }} /> Normal</span>
+                            <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full" style={{ background: 'var(--accent-orange)', boxShadow: '0 0 8px var(--accent-orange)' }} /> VPN</span>
                         </div>
                     </div>
 
                     <div className="h-[300px] w-full mt-2">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={chartData} margin={{ top: 10, right: 10, bottom: 5, left: -20 }}>
+                            <AreaChart data={chartData} margin={{ top: 10, right: 10, bottom: 5, left: -20 }}>
+                                <defs>
+                                    <linearGradient id="colorNormal" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#4f8fff" stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor="#4f8fff" stopOpacity={0}/>
+                                    </linearGradient>
+                                    <linearGradient id="colorVpn" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#ff9900" stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor="#ff9900" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff1a" vertical={false} />
                                 <XAxis
                                     dataKey="time"
@@ -118,36 +150,40 @@ const DashboardView = () => {
                                     labelStyle={{ color: '#a0aabf', fontSize: '12px', marginBottom: '8px' }}
                                     cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '4 4' }}
                                 />
-                                <Line
+                                <Area
                                     type="monotone"
                                     name="Normal Traffic"
                                     dataKey="normal"
                                     stroke="#4f8fff"
                                     strokeWidth={3}
-                                    dot={false}
+                                    fillOpacity={1}
+                                    fill="url(#colorNormal)"
                                     activeDot={{ r: 6, fill: '#4f8fff', stroke: '#151923', strokeWidth: 2 }}
-                                    animationDuration={300}
+                                    animationDuration={500}
                                 />
-                                <Line
+                                <Area
                                     type="monotone"
                                     name="VPN Traffic"
                                     dataKey="vpn"
                                     stroke="#ff9900"
                                     strokeWidth={3}
-                                    dot={false}
+                                    fillOpacity={1}
+                                    fill="url(#colorVpn)"
                                     activeDot={{ r: 6, fill: '#ff9900', stroke: '#151923', strokeWidth: 2 }}
-                                    animationDuration={300}
+                                    animationDuration={500}
                                 />
-                            </LineChart>
+                            </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
-                <div className="lg:col-span-1 glass-panel p-6 rounded-2xl border border-[#ffffff1a] flex flex-col relative overflow-hidden group">
-                    {/* Decorative glow */}
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-[#4f8fff] opacity-5 rounded-full blur-3xl -z-10 group-hover:opacity-10 transition-opacity duration-700"></div>
+                <div
+                    className="lg:col-span-1 glass-panel p-6 rounded-2xl flex flex-col relative overflow-hidden group"
+                    style={{ border: '1px solid var(--border)' }}
+                >
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-[#4f8fff] opacity-5 rounded-full blur-3xl -z-10 group-hover:opacity-10 transition-opacity duration-700" />
 
-                    <h3 className="text-[#a0aabf] font-medium tracking-wide mb-2">Top Deanonymised Apps</h3>
+                    <h3 className="font-medium tracking-wide mb-2" style={{ color: 'var(--text-secondary)' }}>Top Deanonymised Apps</h3>
                     <div className="flex-grow w-full h-[300px] mt-2 flex items-center justify-center">
                         <ReactECharts option={nightingaleOption} style={{ height: '100%', width: '100%' }} />
                     </div>

@@ -7,10 +7,12 @@ import InteractiveSimulator from './components/detection/InteractiveSimulator';
 import PoliciesView from './components/policies/PoliciesView';
 import SettingsView from './components/settings/SettingsView';
 import Login from './components/auth/Login';
+import Register from './components/auth/Register';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { DashboardDataProvider } from './context/DashboardDataContext';
+import Welcome from './components/welcome/Welcome';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -38,10 +40,21 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            {/* Welcome Route */}
+            <Route 
+              path="/welcome" 
+              element={
+                <ProtectedRoute>
+                  <Welcome />
+                </ProtectedRoute>
+              } 
+            />
 
             {/* Protected Dashboard Layout */}
             <Route
-              path="/"
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <DashboardDataProvider>
@@ -54,7 +67,7 @@ function App() {
             />
 
             {/* Catch all */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/welcome" replace />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

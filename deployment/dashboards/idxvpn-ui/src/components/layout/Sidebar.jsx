@@ -4,69 +4,139 @@ import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'dashboard', label: 'Dashboard',                   icon: LayoutDashboard },
     { id: 'analytics', label: 'Analytics & Deanonymisation', icon: BarChart2 },
-    { id: 'policies', label: 'Policies', icon: Shield },
-    { id: 'detection', label: 'Interactive Detection', icon: Activity },
-    { id: 'settings', label: 'Settings', icon: Settings }
+    { id: 'policies',  label: 'Policies',                    icon: Shield },
+    { id: 'detection', label: 'Interactive Detection',       icon: Activity },
+    { id: 'settings',  label: 'Settings',                    icon: Settings },
 ];
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
     const { user, logout } = useAuth();
+
     return (
-        <div className="w-64 glass-panel border-r border-divider flex flex-col h-screen fixed left-0 top-0 z-40 bg-panel backdrop-blur-xl transition-colors">
-            <div className="p-6 border-b border-divider flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#4f8fff] to-[#2555ff] flex items-center justify-center font-bold text-default shadow-[0_0_15px_rgba(79,143,255,0.4)]">
+        <div
+            className="w-64 flex flex-col h-screen fixed left-0 top-0 z-40 transition-colors"
+            style={{
+                background: 'var(--bg-surface)',
+                borderRight: '1px solid var(--border)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                boxShadow: 'var(--shadow-card)',
+            }}
+        >
+            {/* ── Logo ── */}
+            <div
+                className="p-6 flex items-center gap-3"
+                style={{ borderBottom: '1px solid var(--border)' }}
+            >
+                <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white text-xs"
+                    style={{
+                        background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
+                        boxShadow: '0 0 12px var(--accent-blue-glow)',
+                    }}
+                >
                     ID
                 </div>
-                <h1 className="text-xl font-bold tracking-wide text-default">IDxVPN</h1>
+                <h1 className="text-lg font-bold tracking-wide" style={{ color: 'var(--text-primary)' }}>
+                    IDxVPN
+                </h1>
             </div>
 
-            <nav className="flex-1 px-4 py-8 space-y-2">
+            {/* ── Nav ── */}
+            <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
                 {navItems.map((item) => {
-                    const Icon = item.icon;
+                    const Icon     = item.icon;
                     const isActive = activeTab === item.id;
                     return (
                         <button
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${isActive
-                                ? 'bg-black/10 dark:bg-white/10 dark:bg-black/10 dark:bg-white/10 bg-black/5 text-default shadow-[inset_2px_0_0_#4f8fff]'
-                                : 'text-muted hover:bg-black/5 dark:hover:bg-black/10 dark:bg-white/10 hover:text-default hover:translate-x-1'
-                                }`}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-left"
+                            style={{
+                                background:  isActive ? 'var(--accent-blue-glow)' : 'transparent',
+                                color:       isActive ? 'var(--accent-blue)'       : 'var(--text-secondary)',
+                                borderLeft:  isActive ? '2px solid var(--accent-blue)' : '2px solid transparent',
+                                fontWeight:  isActive ? 600 : 400,
+                            }}
+                            onMouseEnter={e => {
+                                if (!isActive) {
+                                    e.currentTarget.style.background = 'var(--bg-surface-hover)';
+                                    e.currentTarget.style.color      = 'var(--text-primary)';
+                                    e.currentTarget.style.transform  = 'translateX(3px)';
+                                }
+                            }}
+                            onMouseLeave={e => {
+                                if (!isActive) {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color      = 'var(--text-secondary)';
+                                    e.currentTarget.style.transform  = 'translateX(0)';
+                                }
+                            }}
                         >
-                            <Icon size={20} className={isActive ? 'text-[#4f8fff]' : ''} />
-                            <span className="font-medium text-sm text-left">{item.label}</span>
+                            <Icon size={18} />
+                            <span className="text-sm">{item.label}</span>
                         </button>
                     );
                 })}
             </nav>
 
-            <div className="p-4 border-t border-divider space-y-4">
+            {/* ── Bottom section ── */}
+            <div className="p-4 space-y-3" style={{ borderTop: '1px solid var(--border)' }}>
+                {/* User card */}
                 {user && (
-                    <div className="p-3 rounded-xl bg-black/5 dark:bg-black/40 border border-divider flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[var(--bg-primary)] border border-divider flex items-center justify-center">
-                                <User size={16} className="text-default" />
+                    <div
+                        className="p-3 rounded-xl flex items-center justify-between gap-3"
+                        style={{
+                            background: 'var(--bg-surface-hover)',
+                            border: '1px solid var(--border)',
+                        }}
+                    >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <div
+                                className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                                style={{ background: 'var(--accent-blue-glow)', border: '1px solid var(--border)' }}
+                            >
+                                <User size={14} style={{ color: 'var(--accent-blue)' }} />
                             </div>
-                            <div>
-                                <div className="text-sm font-semibold text-default capitalize">{user.username}</div>
-                                <div className="text-xs text-muted capitalize">{user.role}</div>
+                            <div className="min-w-0">
+                                <div className="text-sm font-semibold capitalize truncate" style={{ color: 'var(--text-primary)' }}>
+                                    {user.username}
+                                </div>
+                                <div className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>
+                                    {user.role}
+                                </div>
                             </div>
                         </div>
-                        <button onClick={logout} className="p-2 text-muted hover:text-[var(--accent-red)] hover:bg-red-500/10 rounded-lg transition-colors" title="Logout">
-                            <LogOut size={16} />
+                        <button
+                            onClick={logout}
+                            className="p-1.5 rounded-lg transition-colors shrink-0"
+                            style={{ color: 'var(--text-muted)' }}
+                            title="Logout"
+                            onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent-red)'; e.currentTarget.style.background = 'hsla(350,75%,55%,0.10)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
+                        >
+                            <LogOut size={15} />
                         </button>
                     </div>
                 )}
 
+                {/* Theme toggle */}
                 <ThemeToggle />
 
-                <div className="p-3 rounded-xl bg-black/5 dark:bg-black/40 border border-divider flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-[#1bc553] shadow-[0_0_8px_#1bc553]"></div>
-                    <div>
-                        <div className="text-sm font-semibold text-default">Model Training</div>
-                        <div className="text-xs text-muted">DigitalOcean Node active</div>
+                {/* Status badge */}
+                <div
+                    className="p-3 rounded-xl flex items-center gap-3"
+                    style={{ background: 'var(--bg-surface-hover)', border: '1px solid var(--border)' }}
+                >
+                    <div
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ background: 'var(--accent-green)', boxShadow: '0 0 8px var(--accent-green)' }}
+                    />
+                    <div className="min-w-0">
+                        <div className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Model Training</div>
+                        <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>DigitalOcean Node active</div>
                     </div>
                 </div>
             </div>

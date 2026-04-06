@@ -2,30 +2,44 @@ import React from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { Sun, Moon, Monitor } from 'lucide-react';
 
+const themes = [
+    { id: 'light',  icon: Sun,     label: 'Light'  },
+    { id: 'dark',   icon: Moon,    label: 'Dark'   },
+    { id: 'system', icon: Monitor, label: 'System' },
+];
+
 const ThemeToggle = () => {
     const { theme, setTheme } = useTheme();
 
-    const themes = [
-        { id: 'light', icon: Sun, label: 'Light' },
-        { id: 'dark', icon: Moon, label: 'Dark' },
-        { id: 'system', icon: Monitor, label: 'System' }
-    ];
-
     return (
-        <div className="flex bg-black/5 dark:bg-white/5 dark:bg-black/5 dark:bg-black/40 rounded-xl p-1 border border-divider">
-            {themes.map(({ id, icon: Icon, label }) => (
-                <button
-                    key={id}
-                    onClick={() => setTheme(id)}
-                    className={`flex-1 flex items-center justify-center py-2 px-3 rounded-lg transition-all text-sm font-medium ${theme === id
-                            ? 'bg-panel text-default shadow-sm border border-divider'
-                            : 'text-muted hover:text-default hover:bg-black/10 dark:bg-white/10'
-                        }`}
-                    title={`${label} theme`}
-                >
-                    <Icon size={16} />
-                </button>
-            ))}
+        <div
+            className="flex rounded-xl p-1"
+            style={{
+                background: 'var(--bg-surface-hover)',
+                border: '1px solid var(--border)',
+            }}
+        >
+            {themes.map(({ id, icon: Icon, label }) => {
+                const isActive = theme === id;
+                return (
+                    <button
+                        key={id}
+                        onClick={() => setTheme(id)}
+                        title={`${label} theme`}
+                        className="flex-1 flex items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 text-sm font-medium"
+                        style={{
+                            background: isActive ? 'var(--bg-base)' : 'transparent',
+                            color:      isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                            boxShadow:  isActive ? 'var(--shadow-card)' : 'none',
+                            border:     isActive ? '1px solid var(--border)' : '1px solid transparent',
+                        }}
+                        onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = 'var(--text-primary)'; }}
+                        onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = 'var(--text-muted)'; }}
+                    >
+                        <Icon size={15} />
+                    </button>
+                );
+            })}
         </div>
     );
 };
