@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
     AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, PieChart, Pie, Cell, Legend
@@ -8,20 +8,14 @@ import {
     Wifi, Lock, Activity, ExternalLink, Download, RefreshCw
 } from 'lucide-react';
 import { useDashboardData } from '../../context/DashboardDataContext';
+import jsPDF from 'jspdf';
 
-/* ── Helpers ─────────────────────────────────────────────────────── */
-const COLORS_ACTION = {
-    ALLOW:     'var(--accent-green)',
-    CHALLENGE: 'var(--accent-orange)',
-    BLOCK:     'var(--accent-red)',
-};
-
+/* ── Style helpers ───────────────────────────────────────────────── */
 const BADGE = {
     ALLOW:     { bg: 'hsla(152,70%,45%,0.10)', color: 'var(--accent-green)',  border: 'hsla(152,70%,45%,0.30)' },
     CHALLENGE: { bg: 'hsla(35,95%,58%,0.10)',  color: 'var(--accent-orange)', border: 'hsla(35,95%,58%,0.30)' },
     BLOCK:     { bg: 'hsla(350,75%,55%,0.10)', color: 'var(--accent-red)',    border: 'hsla(350,75%,55%,0.30)' },
 };
-
 const SEV = {
     CRITICAL: { color: 'var(--accent-red)',    bg: 'hsla(350,75%,55%,0.10)', border: 'hsla(350,75%,55%,0.30)' },
     HIGH:     { color: 'var(--accent-orange)', bg: 'hsla(35,95%,58%,0.10)',  border: 'hsla(35,95%,58%,0.30)' },
@@ -50,22 +44,22 @@ const SectionTitle = ({ children, sub }) => (
     </div>
 );
 
-/* ── Static fixtures (augment live data) ────────────────────────── */
+/* ── Static fixtures ─────────────────────────────────────────────── */
 const STATIC_THREATS = [
-    { id: 1, time: '06:38:12', ip: '185.220.101.45', type: 'Tor Exit Node',       severity: 'CRITICAL', action: 'BLOCK',     country: 'Germany',      port: 9001 },
-    { id: 2, time: '06:37:55', ip: '91.108.56.130',  type: 'OpenVPN Tunnel',      severity: 'HIGH',     action: 'BLOCK',     country: 'Netherlands',  port: 1194 },
-    { id: 3, time: '06:37:22', ip: '104.21.44.9',    type: 'HTTPS Tunnel',        severity: 'MEDIUM',   action: 'CHALLENGE', country: 'USA',          port: 443  },
-    { id: 4, time: '06:36:50', ip: '192.168.1.105',  type: 'Internal Subnet',     severity: 'LOW',      action: 'ALLOW',     country: 'Local',        port: 0    },
-    { id: 5, time: '06:36:18', ip: '45.79.99.100',   type: 'WireGuard Segment',   severity: 'HIGH',     action: 'BLOCK',     country: 'USA',          port: 51820 },
-    { id: 6, time: '06:35:44', ip: '198.41.0.4',     type: 'P2P Seed Node',       severity: 'MEDIUM',   action: 'CHALLENGE', country: 'Sweden',       port: 6881 },
+    { id: 1, time: '06:38:12', ip: '185.220.101.45', type: 'Tor Exit Node',     severity: 'CRITICAL', action: 'BLOCK',     country: 'Germany',     port: 9001  },
+    { id: 2, time: '06:37:55', ip: '91.108.56.130',  type: 'OpenVPN Tunnel',    severity: 'HIGH',     action: 'BLOCK',     country: 'Netherlands', port: 1194  },
+    { id: 3, time: '06:37:22', ip: '104.21.44.9',    type: 'HTTPS Tunnel',      severity: 'MEDIUM',   action: 'CHALLENGE', country: 'USA',         port: 443   },
+    { id: 4, time: '06:36:50', ip: '192.168.1.105',  type: 'Internal Subnet',   severity: 'LOW',      action: 'ALLOW',     country: 'Local',       port: 0     },
+    { id: 5, time: '06:36:18', ip: '45.79.99.100',   type: 'WireGuard Segment', severity: 'HIGH',     action: 'BLOCK',     country: 'USA',         port: 51820 },
+    { id: 6, time: '06:35:44', ip: '198.41.0.4',     type: 'P2P Seed Node',     severity: 'MEDIUM',   action: 'CHALLENGE', country: 'Sweden',      port: 6881  },
 ];
 
 const ANOMALIES = [
-    { id: 'A1', time: '06:37:03', message: 'Spike: 4× normal packet rate on en0 — possible DDoS probe',         severity: 'CRITICAL' },
-    { id: 'A2', time: '06:36:27', message: 'Encrypted payload entropy > 7.9 bits/byte — tunnel obfuscation',    severity: 'HIGH'     },
-    { id: 'A3', time: '06:35:51', message: 'Destination port 443 hit from 22 unique IPs in <30 s',              severity: 'MEDIUM'   },
-    { id: 'A4', time: '06:35:10', message: 'IAT std deviation below 0.1 ms — bot-like regularity detected',     severity: 'HIGH'     },
-    { id: 'A5', time: '06:34:29', message: 'Payload size variance collapsed — likely fixed-size VPN padding',   severity: 'MEDIUM'   },
+    { id: 'A1', time: '06:37:03', message: 'Spike: 4× normal packet rate on en0 — possible DDoS probe',        severity: 'CRITICAL' },
+    { id: 'A2', time: '06:36:27', message: 'Encrypted payload entropy > 7.9 bits/byte — tunnel obfuscation',   severity: 'HIGH'     },
+    { id: 'A3', time: '06:35:51', message: 'Destination port 443 hit from 22 unique IPs in <30 s',             severity: 'MEDIUM'   },
+    { id: 'A4', time: '06:35:10', message: 'IAT std deviation below 0.1 ms — bot-like regularity detected',    severity: 'HIGH'     },
+    { id: 'A5', time: '06:34:29', message: 'Payload size variance collapsed — likely fixed-size VPN padding',  severity: 'MEDIUM'   },
 ];
 
 const RECS = [
@@ -75,65 +69,274 @@ const RECS = [
     { priority: 'LOW',    icon: Wifi,          text: 'Monitor P2P flows on uplink: bandwidth share is 12% above baseline.' },
 ];
 
+/* ── PDF Generator ───────────────────────────────────────────────── */
+const generatePDF = ({ metrics, stats, logs }) => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const now = new Date();
+    const W   = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    let y = 0;
+
+    const ensurePage = (needed = 12) => {
+        if (y + needed > pageH - 15) { doc.addPage(); y = 20; }
+    };
+
+    /* ── Cover header ── */
+    doc.setFillColor(15, 20, 36);
+    doc.rect(0, 0, W, 38, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('IDxVPN — Network Security Report', 14, 18);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(160, 170, 191);
+    doc.text(`Generated: ${now.toLocaleString()}   |   Multi-Layer VPN Detection & Deanonymisation Platform`, 14, 28);
+    doc.text(`Session ID: IDX-${Date.now().toString(36).toUpperCase()}`, 14, 34);
+    y = 48;
+
+    /* ── Section helper ── */
+    const sectionHeader = (title, r = 79, g = 143, b = 255) => {
+        ensurePage(14);
+        doc.setFillColor(r, g, b);
+        doc.roundedRect(14, y, W - 28, 8, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title, 18, y + 5.5);
+        y += 13;
+        doc.setTextColor(30, 35, 50);
+    };
+
+    const row = (label, value, indent = 14) => {
+        ensurePage(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(90, 106, 133);
+        doc.text(label + ':', indent, y);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(20, 25, 40);
+        doc.text(String(value), indent + 55, y);
+        y += 7;
+    };
+
+    const divider = () => {
+        ensurePage(5);
+        doc.setDrawColor(230, 232, 240);
+        doc.line(14, y, W - 14, y);
+        y += 5;
+    };
+
+    /* ─ 1. Executive Summary ─ */
+    sectionHeader('1.  Executive Summary');
+    row('Report Period',           now.toLocaleDateString());
+    row('Total Packets Scanned',   metrics.totalScanned.toLocaleString());
+    row('ALLOW (legitimate)',       `${stats.allowed} packets (${stats.allowPct}%)`);
+    row('CHALLENGE (suspicious)',   `${stats.warned} packets (${stats.warnPct}%)`);
+    row('BLOCK (high-risk)',        `${stats.blocked} packets (${stats.blockPct}%)`);
+    row('VPN Flows Detected',       stats.vpn);
+    row('Identities Deanonymised',  metrics.deanonymisedFlows.toLocaleString());
+    row('High-Risk Blocks',         metrics.highRiskBlocks.toLocaleString());
+    divider();
+
+    /* ─ 2. KPI Overview ─ */
+    sectionHeader('2.  Key Performance Indicators', 27, 197, 83);
+    const kpis = [
+        ['Block Rate',            `${stats.blockPct}%`],
+        ['Challenge Rate',        `${stats.warnPct}%`],
+        ['Allow Rate',            `${stats.allowPct}%`],
+        ['Deanonymisation Rate',  metrics.deanonymisedFlows > 0 ? ((metrics.deanonymisedFlows / Math.max(stats.vpn,1)) * 100).toFixed(1) + '%' : 'N/A'],
+    ];
+    kpis.forEach(([l, v]) => row(l, v));
+    divider();
+
+    /* ─ 3. Threat Intelligence ─ */
+    sectionHeader('3.  Threat Intelligence Feed', 255, 80, 80);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(90, 106, 133);
+    const TH = ['Time', 'IP Address', 'Threat Type', 'Country', 'Port', 'Severity', 'Action'];
+    const CW  = [20, 36, 38, 26, 16, 22, 22];
+    let tx = 14;
+    TH.forEach((h, i) => { doc.text(h, tx, y); tx += CW[i]; });
+    y += 2;
+    doc.setDrawColor(200, 205, 215);
+    doc.line(14, y, W - 14, y);
+    y += 4;
+
+    STATIC_THREATS.forEach(t => {
+        ensurePage(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(20, 25, 40);
+        const cells = [t.time, t.ip, t.type, t.country, String(t.port || '—'), t.severity, t.action];
+        let cx = 14;
+        cells.forEach((c, i) => { doc.text(c, cx, y); cx += CW[i]; });
+        y += 6;
+    });
+    divider();
+
+    /* ─ 4. Anomaly Detection ─ */
+    sectionHeader('4.  Anomaly Detection Log', 245, 158, 11);
+    ANOMALIES.forEach(a => {
+        ensurePage(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(a.severity === 'CRITICAL' ? 220 : a.severity === 'HIGH' ? 200 : 150,
+                         a.severity === 'CRITICAL' ? 50  : a.severity === 'HIGH' ? 80  : 130, 50);
+        doc.text(`[${a.severity}]  ${a.time}`, 14, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(40, 45, 65);
+        doc.setFontSize(8);
+        const lines = doc.splitTextToSize(a.message, W - 32);
+        doc.text(lines, 20, y);
+        y += lines.length * 5 + 3;
+    });
+    divider();
+
+    /* ─ 5. Recent Packet Log ─ */
+    sectionHeader('5.  Recent Packet Log (Latest 20)', 100, 100, 220);
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(90, 106, 133);
+    const PH = ['Time', 'Source', 'Destination', 'Flow Type', 'Action', 'Conf.'];
+    const PW  = [20, 42, 42, 32, 22, 16];
+    let px = 14;
+    PH.forEach((h, i) => { doc.text(h, px, y); px += PW[i]; });
+    y += 2;
+    doc.line(14, y, W - 14, y);
+    y += 4;
+
+    logs.slice(0, 20).forEach(l => {
+        ensurePage(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(20, 25, 40);
+        const srcIp  = l.src.split(':')[0];
+        const dstIp  = (l.dst || '—').split(':')[0];
+        const cells  = [l.time, srcIp, dstIp, l.flowType || '—', l.action, `${(l.confidence || 0).toFixed(0)}%`];
+        let cx2 = 14;
+        cells.forEach((c, i) => { doc.text(String(c), cx2, y); cx2 += PW[i]; });
+        y += 6;
+    });
+    divider();
+
+    /* ─ 6. Recommendations ─ */
+    sectionHeader('6.  Security Recommendations', 150, 100, 250);
+    RECS.forEach((r, i) => {
+        ensurePage(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(r.priority === 'HIGH' ? 220 : r.priority === 'MEDIUM' ? 180 : 80,
+                         r.priority === 'HIGH' ? 90  : r.priority === 'MEDIUM' ? 140 : 180, 60);
+        doc.text(`${i + 1}. [${r.priority}]`, 14, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(40, 45, 65);
+        doc.setFontSize(8.5);
+        const lines = doc.splitTextToSize(r.text, W - 32);
+        doc.text(lines, 20, y);
+        y += lines.length * 5 + 4;
+    });
+
+    /* ── Footer on every page ── */
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7.5);
+        doc.setTextColor(160, 170, 191);
+        doc.text(`IDxVPN Security Report  |  Page ${i} of ${pageCount}  |  Confidential`, 14, pageH - 8);
+        doc.text(now.toLocaleString(), W - 14, pageH - 8, { align: 'right' });
+    }
+
+    doc.save(`IDxVPN_Security_Report_${now.toLocaleDateString('en-GB').replace(/\//g, '-')}.pdf`);
+};
+
 /* ── Main Component ─────────────────────────────────────────────── */
 const ReportsView = () => {
-    const { logs, metrics } = useDashboardData();
+    const { logs, metrics }   = useDashboardData();
     const [activeTab, setActiveTab] = useState('overview');
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isExporting, setIsExporting]   = useState(false);
 
-    /* ─ Derived stats from live logs ─ */
+    /* ─ Refresh handler ─ */
+    const handleRefresh = useCallback(() => {
+        setIsRefreshing(true);
+        setTimeout(() => { setRefreshKey(k => k + 1); setIsRefreshing(false); }, 600);
+    }, []);
+
+    /* ─ PDF handler ─ */
+    const handleExport = useCallback(async () => {
+        setIsExporting(true);
+        await new Promise(r => setTimeout(r, 300)); // let UI update
+        generatePDF({ metrics, stats, logs });
+        setIsExporting(false);
+    }, [metrics, logs]); // stats captured below via closure
+
+    /* ─ Derived stats ─ */
     const stats = useMemo(() => {
-        const total     = logs.length || 1;
-        const blocked   = logs.filter(l => l.action === 'BLOCK').length;
-        const warned    = logs.filter(l => l.action === 'CHALLENGE').length;
-        const allowed   = logs.filter(l => l.action === 'ALLOW').length;
-        const vpn       = logs.filter(l => l.isVpn).length;
-        const blockPct  = ((blocked / total) * 100).toFixed(1);
-        const warnPct   = ((warned  / total) * 100).toFixed(1);
-        const allowPct  = ((allowed / total) * 100).toFixed(1);
-        return { total, blocked, warned, allowed, vpn, blockPct, warnPct, allowPct };
-    }, [logs]);
+        const total    = logs.length || 1;
+        const blocked  = logs.filter(l => l.action === 'BLOCK').length;
+        const warned   = logs.filter(l => l.action === 'CHALLENGE').length;
+        const allowed  = logs.filter(l => l.action === 'ALLOW').length;
+        const vpn      = logs.filter(l => l.isVpn).length;
+        return {
+            total, blocked, warned, allowed, vpn,
+            blockPct: ((blocked / total) * 100).toFixed(1),
+            warnPct:  ((warned  / total) * 100).toFixed(1),
+            allowPct: ((allowed / total) * 100).toFixed(1),
+        };
+    }, [logs, refreshKey]);
 
     /* ─ Pie data ─ */
     const pieData = useMemo(() => [
-        { name: 'ALLOW',     value: stats.allowed  || 1, color: '#1bc553' },
-        { name: 'CHALLENGE', value: stats.warned    || 1, color: '#ff9900' },
-        { name: 'BLOCK',     value: stats.blocked   || 1, color: '#ff5050' },
+        { name: 'ALLOW',     value: Math.max(stats.allowed,  1), color: '#1bc553' },
+        { name: 'CHALLENGE', value: Math.max(stats.warned,   1), color: '#ff9900' },
+        { name: 'BLOCK',     value: Math.max(stats.blocked,  1), color: '#ff5050' },
     ], [stats]);
 
-    /* ─ Bar data: flow types ─ */
+    /* ─ Bar data ─ */
     const flowTypeData = useMemo(() => {
         const map = {};
         logs.forEach(l => { map[l.flowType] = (map[l.flowType] || 0) + 1; });
         return Object.entries(map).map(([name, count]) => ({ name, count }))
                      .sort((a, b) => b.count - a.count).slice(0, 8);
-    }, [logs]);
+    }, [logs, refreshKey]);
 
-    /* ─ Timeline area (last 10 logs as fake time buckets) ─ */
+    /* ─ Timeline: bucket logs into 5-second windows, count allowed/warned/blocked per window ─ */
     const timelineData = useMemo(() => {
         if (!logs.length) return [];
-        return logs.slice(0, 10).reverse().map((l, i) => ({
-            t:       l.time,
-            allowed: l.action === 'ALLOW'     ? 1 : 0,
-            warned:  l.action === 'CHALLENGE' ? 1 : 0,
-            blocked: l.action === 'BLOCK'     ? 1 : 0,
-        }));
-    }, [logs]);
+        // Group by HH:MM:SS but snap seconds to 5-second buckets
+        const buckets = {};
+        [...logs].reverse().forEach(l => {
+            const parts = l.time.split(':');
+            if (parts.length < 3) return;
+            const snapped = Math.floor(parseInt(parts[2]) / 5) * 5;
+            const key = `${parts[0]}:${parts[1]}:${String(snapped).padStart(2, '0')}`;
+            if (!buckets[key]) buckets[key] = { t: key, allowed: 0, warned: 0, blocked: 0 };
+            if (l.action === 'ALLOW')     buckets[key].allowed++;
+            else if (l.action === 'CHALLENGE') buckets[key].warned++;
+            else if (l.action === 'BLOCK')     buckets[key].blocked++;
+        });
+        return Object.values(buckets).slice(-15); // last 15 windows
+    }, [logs, refreshKey]);
 
     const TABS = ['overview', 'threats', 'anomalies', 'network', 'recommendations'];
 
     const tooltipStyle = {
-        backgroundColor: 'rgba(21,25,35,0.95)',
+        backgroundColor: 'rgba(12,16,28,0.97)',
         borderColor: 'rgba(255,255,255,0.08)',
         borderRadius: '10px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
         fontSize: '12px',
         color: '#e2e8f0',
+        padding: '10px 14px',
     };
 
     return (
-        <div className="space-y-6 animate-fade-in-up">
+        <div className="space-y-6 animate-fade-in-up" key={refreshKey}>
 
-            {/* ── Page Header ── */}
+            {/* Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl glass-panel relative overflow-hidden"
                  style={{ border: '1px solid var(--border)' }}>
                 <div className="absolute top-0 right-0 w-72 h-48 bg-[var(--accent-blue)] opacity-5 rounded-full blur-3xl -z-10" />
@@ -147,18 +350,26 @@ const ReportsView = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
-                            style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-                        <RefreshCw size={14} /> Refresh
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95"
+                        style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-secondary)', opacity: isRefreshing ? 0.7 : 1 }}>
+                        <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+                        {isRefreshing ? 'Refreshing…' : 'Refresh'}
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
-                            style={{ background: 'hsla(210,100%,60%,0.12)', border: '1px solid var(--accent-blue)', color: 'var(--accent-blue)' }}>
-                        <Download size={14} /> Export PDF
+                    <button
+                        onClick={handleExport}
+                        disabled={isExporting}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95"
+                        style={{ background: 'hsla(210,100%,60%,0.12)', border: '1px solid var(--accent-blue)', color: 'var(--accent-blue)', opacity: isExporting ? 0.7 : 1 }}>
+                        <Download size={14} className={isExporting ? 'animate-bounce' : ''} />
+                        {isExporting ? 'Generating…' : 'Export PDF'}
                     </button>
                 </div>
             </div>
 
-            {/* ── Tab Bar ── */}
+            {/* Tab Bar */}
             <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                 {TABS.map(t => (
                     <button key={t} onClick={() => setActiveTab(t)}
@@ -173,51 +384,74 @@ const ReportsView = () => {
                 ))}
             </div>
 
-            {/* ══════════════════════════════════════ OVERVIEW ══════════════════════════════════════ */}
+            {/* ══ OVERVIEW ══ */}
             {activeTab === 'overview' && (
                 <div className="space-y-6">
-                    {/* KPI cards */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard icon={Activity}     label="Total Scanned"      value={metrics.totalScanned.toLocaleString()} sub="Packets this session"       color="var(--accent-blue)" />
-                        <StatCard icon={CheckCircle2} label="Allowed"            value={stats.allowed.toLocaleString()}        sub={`${stats.allowPct}% of traffic`} color="var(--accent-green)" />
-                        <StatCard icon={AlertTriangle}label="Challenged"         value={stats.warned.toLocaleString()}         sub={`${stats.warnPct}% flagged`}  color="var(--accent-orange)" />
-                        <StatCard icon={ShieldOff}    label="Blocked"            value={stats.blocked.toLocaleString()}        sub={`${stats.blockPct}% threats`} color="var(--accent-red)" />
+                        <StatCard icon={Activity}      label="Total Scanned"  value={metrics.totalScanned.toLocaleString()} sub="Packets this session"          color="var(--accent-blue)"   />
+                        <StatCard icon={CheckCircle2}  label="Allowed"        value={stats.allowed.toLocaleString()}        sub={`${stats.allowPct}% of traffic`} color="var(--accent-green)"  />
+                        <StatCard icon={AlertTriangle} label="Challenged"     value={stats.warned.toLocaleString()}         sub={`${stats.warnPct}% flagged`}    color="var(--accent-orange)" />
+                        <StatCard icon={ShieldOff}     label="Blocked"        value={stats.blocked.toLocaleString()}        sub={`${stats.blockPct}% threats`}   color="var(--accent-red)"    />
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Timeline chart */}
+                        {/* Timeline area chart — properly bucketed */}
                         <div className="lg:col-span-2 p-6 rounded-2xl glass-panel" style={{ border: '1px solid var(--border)' }}>
-                            <SectionTitle sub="Per-packet action breakdown over recent traffic">Packet Action Timeline</SectionTitle>
-                            <div className="h-[260px]">
+                            <SectionTitle sub="Packets per 5-second window — allow, challenge & block counts">Packet Action Timeline</SectionTitle>
+                            <div className="h-[280px]">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={timelineData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                                    <AreaChart data={timelineData} margin={{ top: 10, right: 10, bottom: 0, left: -10 }}>
                                         <defs>
-                                            <linearGradient id="gA" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#1bc553" stopOpacity={0.3}/><stop offset="95%" stopColor="#1bc553" stopOpacity={0}/></linearGradient>
-                                            <linearGradient id="gW" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#ff9900" stopOpacity={0.3}/><stop offset="95%" stopColor="#ff9900" stopOpacity={0}/></linearGradient>
-                                            <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#ff5050" stopOpacity={0.3}/><stop offset="95%" stopColor="#ff5050" stopOpacity={0}/></linearGradient>
+                                            <linearGradient id="gA" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%"  stopColor="#1bc553" stopOpacity={0.35}/>
+                                                <stop offset="95%" stopColor="#1bc553" stopOpacity={0}/>
+                                            </linearGradient>
+                                            <linearGradient id="gW" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%"  stopColor="#ff9900" stopOpacity={0.35}/>
+                                                <stop offset="95%" stopColor="#ff9900" stopOpacity={0}/>
+                                            </linearGradient>
+                                            <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%"  stopColor="#ff5050" stopOpacity={0.35}/>
+                                                <stop offset="95%" stopColor="#ff5050" stopOpacity={0}/>
+                                            </linearGradient>
                                         </defs>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff1a" vertical={false} />
-                                        <XAxis dataKey="t" tick={{ fill: '#5a6a85', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                        <YAxis tick={{ fill: '#5a6a85', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                        <Tooltip contentStyle={tooltipStyle} />
-                                        <Area type="monotone" dataKey="allowed" name="ALLOW"     stroke="#1bc553" strokeWidth={2} fill="url(#gA)" />
-                                        <Area type="monotone" dataKey="warned"  name="CHALLENGE" stroke="#ff9900" strokeWidth={2} fill="url(#gW)" />
-                                        <Area type="monotone" dataKey="blocked" name="BLOCK"     stroke="#ff5050" strokeWidth={2} fill="url(#gB)" />
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff14" vertical={false} />
+                                        <XAxis
+                                            dataKey="t"
+                                            tick={{ fill: '#5a6a85', fontSize: 9 }}
+                                            axisLine={false} tickLine={false}
+                                            tickFormatter={v => v.slice(3)} // show MM:SS only
+                                            interval="preserveStartEnd"
+                                        />
+                                        <YAxis
+                                            tick={{ fill: '#5a6a85', fontSize: 10 }}
+                                            axisLine={false} tickLine={false}
+                                            allowDecimals={false}
+                                            width={28}
+                                        />
+                                        <Tooltip
+                                            contentStyle={tooltipStyle}
+                                            labelFormatter={v => `Window: ${v}`}
+                                            formatter={(val, name) => [`${val} pkts`, name]}
+                                        />
+                                        <Area type="monotone" dataKey="allowed" name="ALLOW"     stroke="#1bc553" strokeWidth={2.5} fill="url(#gA)" dot={false} activeDot={{ r: 5 }} />
+                                        <Area type="monotone" dataKey="warned"  name="CHALLENGE" stroke="#ff9900" strokeWidth={2.5} fill="url(#gW)" dot={false} activeDot={{ r: 5 }} />
+                                        <Area type="monotone" dataKey="blocked" name="BLOCK"     stroke="#ff5050" strokeWidth={2.5} fill="url(#gB)" dot={false} activeDot={{ r: 5 }} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
 
-                        {/* Pie donut */}
+                        {/* Donut */}
                         <div className="p-6 rounded-2xl glass-panel flex flex-col" style={{ border: '1px solid var(--border)' }}>
                             <SectionTitle sub="Distribution by policy action">Traffic Split</SectionTitle>
-                            <div className="flex-1 min-h-[220px]">
+                            <div className="flex-1 min-h-[240px]">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
-                                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={4} dataKey="value" stroke="none">
+                                        <Pie data={pieData} cx="50%" cy="45%" innerRadius={58} outerRadius={88} paddingAngle={4} dataKey="value" stroke="none">
                                             {pieData.map((e, i) => <Cell key={i} fill={e.color} />)}
                                         </Pie>
-                                        <Tooltip contentStyle={tooltipStyle} formatter={(v, n) => [v + ' packets', n]} />
+                                        <Tooltip contentStyle={tooltipStyle} formatter={(v, n) => [`${v} packets`, n]} />
                                         <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', color: '#a0aabf' }} />
                                     </PieChart>
                                 </ResponsiveContainer>
@@ -225,7 +459,7 @@ const ReportsView = () => {
                         </div>
                     </div>
 
-                    {/* Recent log table summary */}
+                    {/* Recent log */}
                     <div className="rounded-2xl glass-panel overflow-hidden" style={{ border: '1px solid var(--border)' }}>
                         <div className="p-5 flex justify-between items-center" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
                             <h3 className="font-bold" style={{ color: 'var(--text-primary)' }}>Recent Packet Log</h3>
@@ -236,7 +470,8 @@ const ReportsView = () => {
                                 <thead>
                                     <tr style={{ background: 'var(--bg-surface-hover)' }}>
                                         {['Time', 'Source → Dest', 'Flow Type', 'Action', 'Confidence'].map(h => (
-                                            <th key={h} className="p-3 text-left text-xs uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>{h}</th>
+                                            <th key={h} className="p-3 text-left text-xs uppercase tracking-wider font-semibold"
+                                                style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
@@ -267,22 +502,20 @@ const ReportsView = () => {
                 </div>
             )}
 
-            {/* ══════════════════════════════════════ THREATS ══════════════════════════════════════ */}
+            {/* ══ THREATS ══ */}
             {activeTab === 'threats' && (
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard icon={ShieldOff}    label="Blocked Threats"  value={metrics.highRiskBlocks.toLocaleString()} sub="Policy engine decisions"  color="var(--accent-red)"    />
-                        <StatCard icon={AlertTriangle}label="Active VPN Nodes" value={stats.vpn.toLocaleString()}             sub="Detected this session"    color="var(--accent-orange)" />
-                        <StatCard icon={TrendingUp}   label="Block Rate"        value={`${stats.blockPct}%`}                  sub="Of all intercepted flows" color="var(--accent-purple)" />
-                        <StatCard icon={Lock}         label="Deanonymised"      value={metrics.deanonymisedFlows.toLocaleString()} sub="Identities resolved"  color="var(--accent-blue)"   />
+                        <StatCard icon={ShieldOff}     label="Blocked Threats"  value={metrics.highRiskBlocks.toLocaleString()}    sub="Policy engine decisions"  color="var(--accent-red)"    />
+                        <StatCard icon={AlertTriangle} label="Active VPN Nodes" value={stats.vpn.toLocaleString()}                  sub="Detected this session"    color="var(--accent-orange)" />
+                        <StatCard icon={TrendingUp}    label="Block Rate"        value={`${stats.blockPct}%`}                       sub="Of all intercepted flows" color="var(--accent-purple)" />
+                        <StatCard icon={Lock}          label="Deanonymised"      value={metrics.deanonymisedFlows.toLocaleString()} sub="Identities resolved"      color="var(--accent-blue)"   />
                     </div>
-
                     <div className="rounded-2xl glass-panel overflow-hidden" style={{ border: '1px solid var(--border)' }}>
                         <div className="p-5 flex justify-between items-center" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
                             <h3 className="font-bold" style={{ color: 'var(--text-primary)' }}>Threat Intelligence Feed</h3>
                             <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--accent-red)' }}>
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                                LIVE
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" /> LIVE
                             </span>
                         </div>
                         <div className="overflow-x-auto">
@@ -290,7 +523,8 @@ const ReportsView = () => {
                                 <thead>
                                     <tr style={{ background: 'var(--bg-surface-hover)' }}>
                                         {['Time', 'IP Address', 'Threat Type', 'Country', 'Port', 'Severity', 'Action'].map(h => (
-                                            <th key={h} className="p-3 text-left text-xs uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>{h}</th>
+                                            <th key={h} className="p-3 text-left text-xs uppercase tracking-wider font-semibold"
+                                                style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
@@ -305,12 +539,14 @@ const ReportsView = () => {
                                             <td className="p-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{t.country}</td>
                                             <td className="p-3 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>{t.port || '—'}</td>
                                             <td className="p-3">
-                                                <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ background: SEV[t.severity]?.bg, color: SEV[t.severity]?.color, border: `1px solid ${SEV[t.severity]?.border}` }}>
+                                                <span className="px-2 py-0.5 rounded text-xs font-bold"
+                                                      style={{ background: SEV[t.severity]?.bg, color: SEV[t.severity]?.color, border: `1px solid ${SEV[t.severity]?.border}` }}>
                                                     {t.severity}
                                                 </span>
                                             </td>
                                             <td className="p-3">
-                                                <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ background: BADGE[t.action]?.bg, color: BADGE[t.action]?.color, border: `1px solid ${BADGE[t.action]?.border}` }}>
+                                                <span className="px-2 py-0.5 rounded text-xs font-bold"
+                                                      style={{ background: BADGE[t.action]?.bg, color: BADGE[t.action]?.color, border: `1px solid ${BADGE[t.action]?.border}` }}>
                                                     {t.action}
                                                 </span>
                                             </td>
@@ -323,7 +559,7 @@ const ReportsView = () => {
                 </div>
             )}
 
-            {/* ══════════════════════════════════════ ANOMALIES ════════════════════════════════════ */}
+            {/* ══ ANOMALIES ══ */}
             {activeTab === 'anomalies' && (
                 <div className="space-y-4">
                     <div className="p-5 rounded-2xl glass-panel" style={{ border: '1px solid var(--border)', background: 'hsla(350,75%,55%,0.05)' }}>
@@ -331,26 +567,26 @@ const ReportsView = () => {
                             ⚠️ IDxVPN detected <strong style={{ color: 'var(--accent-red)' }}>{ANOMALIES.filter(a => a.severity === 'CRITICAL').length} critical</strong> and <strong style={{ color: 'var(--accent-orange)' }}>{ANOMALIES.filter(a => a.severity === 'HIGH').length} high-severity</strong> anomalies in the last scan window. Immediate review recommended.
                         </p>
                     </div>
-
-                    <div className="space-y-3">
-                        {ANOMALIES.map(a => (
-                            <div key={a.id} className="p-4 rounded-2xl glass-panel flex items-start gap-4" style={{ border: `1px solid ${SEV[a.severity]?.border}` }}>
-                                <div className="mt-1 w-2.5 h-2.5 rounded-full shrink-0" style={{ background: SEV[a.severity]?.color, boxShadow: `0 0 8px ${SEV[a.severity]?.color}` }} />
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-1">
-                                        <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ background: SEV[a.severity]?.bg, color: SEV[a.severity]?.color, border: `1px solid ${SEV[a.severity]?.border}` }}>{a.severity}</span>
-                                        <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>{a.time}</span>
-                                    </div>
-                                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{a.message}</p>
+                    {ANOMALIES.map(a => (
+                        <div key={a.id} className="p-4 rounded-2xl glass-panel flex items-start gap-4"
+                             style={{ border: `1px solid ${SEV[a.severity]?.border}` }}>
+                            <div className="mt-1 w-2.5 h-2.5 rounded-full shrink-0"
+                                 style={{ background: SEV[a.severity]?.color, boxShadow: `0 0 8px ${SEV[a.severity]?.color}` }} />
+                            <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <span className="px-2 py-0.5 rounded text-xs font-bold"
+                                          style={{ background: SEV[a.severity]?.bg, color: SEV[a.severity]?.color, border: `1px solid ${SEV[a.severity]?.border}` }}>{a.severity}</span>
+                                    <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>{a.time}</span>
                                 </div>
-                                <ExternalLink size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} className="mt-1 cursor-pointer" />
+                                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{a.message}</p>
                             </div>
-                        ))}
-                    </div>
+                            <ExternalLink size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} className="mt-1 cursor-pointer" />
+                        </div>
+                    ))}
                 </div>
             )}
 
-            {/* ══════════════════════════════════════ NETWORK ══════════════════════════════════════ */}
+            {/* ══ NETWORK ══ */}
             {activeTab === 'network' && (
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -359,8 +595,8 @@ const ReportsView = () => {
                             <div className="h-[300px]">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={flowTypeData} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff1a" horizontal={false} />
-                                        <XAxis type="number" tick={{ fill: '#5a6a85', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff14" horizontal={false} />
+                                        <XAxis type="number" tick={{ fill: '#5a6a85', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
                                         <YAxis type="category" dataKey="name" tick={{ fill: '#a0aabf', fontSize: 10 }} axisLine={false} tickLine={false} width={90} />
                                         <Tooltip contentStyle={tooltipStyle} />
                                         <Bar dataKey="count" name="Packets" radius={[0, 4, 4, 0]} fill="var(--accent-blue)" fillOpacity={0.8} />
@@ -368,15 +604,14 @@ const ReportsView = () => {
                                 </ResponsiveContainer>
                             </div>
                         </div>
-
                         <div className="p-6 rounded-2xl glass-panel" style={{ border: '1px solid var(--border)' }}>
                             <SectionTitle sub="Interface and protocol health status">Network Interface Status</SectionTitle>
                             <div className="space-y-3 mt-2">
                                 {[
-                                    { name: 'en0 (Wi-Fi)',      status: 'ACTIVE',      packets: '14.2k', load: 72, color: 'var(--accent-green)' },
-                                    { name: 'en1 (Ethernet)',   status: 'IDLE',         packets: '0.0k',  load: 0,  color: 'var(--text-muted)'   },
-                                    { name: 'utun0 (Loopback)', status: 'MONITORING',  packets: '1.8k',  load: 18, color: 'var(--accent-blue)'  },
-                                    { name: 'pflog0 (PF log)',  status: 'BLOCKED',     packets: '0.3k',  load: 3,  color: 'var(--accent-orange)'},
+                                    { name: 'en0 (Wi-Fi)',      status: 'ACTIVE',     packets: '14.2k', load: 72, color: 'var(--accent-green)'  },
+                                    { name: 'en1 (Ethernet)',   status: 'IDLE',       packets: '0.0k',  load: 0,  color: 'var(--text-muted)'    },
+                                    { name: 'utun0 (Loopback)', status: 'MONITORING', packets: '1.8k',  load: 18, color: 'var(--accent-blue)'   },
+                                    { name: 'pflog0 (PF log)',  status: 'BLOCKED',    packets: '0.3k',  load: 3,  color: 'var(--accent-orange)' },
                                 ].map(iface => (
                                     <div key={iface.name} className="p-3 rounded-xl" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                                         <div className="flex justify-between items-center mb-2">
@@ -386,7 +621,8 @@ const ReportsView = () => {
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{iface.packets} pkts</span>
-                                                <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ color: iface.color, background: `${iface.color}18`, border: `1px solid ${iface.color}44` }}>{iface.status}</span>
+                                                <span className="text-xs font-bold px-2 py-0.5 rounded"
+                                                      style={{ color: iface.color, background: `${iface.color}18`, border: `1px solid ${iface.color}44` }}>{iface.status}</span>
                                             </div>
                                         </div>
                                         <div className="h-1.5 rounded-full" style={{ background: 'var(--border)' }}>
@@ -398,16 +634,14 @@ const ReportsView = () => {
                             </div>
                         </div>
                     </div>
-
-                    {/* Protocol breakdown */}
                     <div className="p-6 rounded-2xl glass-panel" style={{ border: '1px solid var(--border)' }}>
                         <SectionTitle sub="Packets grouped by transport protocol">Protocol Summary</SectionTitle>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             {[
-                                { proto: 'TCP',  share: 68, color: 'var(--accent-blue)'   },
-                                { proto: 'UDP',  share: 24, color: 'var(--accent-purple)'  },
-                                { proto: 'ICMP', share: 5,  color: 'var(--accent-orange)'  },
-                                { proto: 'Other',share: 3,  color: 'var(--text-muted)'     },
+                                { proto: 'TCP',   share: 68, color: 'var(--accent-blue)'   },
+                                { proto: 'UDP',   share: 24, color: 'var(--accent-purple)'  },
+                                { proto: 'ICMP',  share: 5,  color: 'var(--accent-orange)'  },
+                                { proto: 'Other', share: 3,  color: 'var(--text-muted)'     },
                             ].map(p => (
                                 <div key={p.proto} className="p-4 rounded-xl text-center" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                                     <div className="text-3xl font-bold font-mono mb-1" style={{ color: p.color }}>{p.share}%</div>
@@ -419,7 +653,7 @@ const ReportsView = () => {
                 </div>
             )}
 
-            {/* ══════════════════════════════════════ RECOMMENDATIONS ══════════════════════════════════════ */}
+            {/* ══ RECOMMENDATIONS ══ */}
             {activeTab === 'recommendations' && (
                 <div className="space-y-4">
                     <div className="p-5 rounded-2xl glass-panel" style={{ border: '1px solid var(--border)', background: 'hsla(210,100%,60%,0.04)' }}>
@@ -427,16 +661,17 @@ const ReportsView = () => {
                             💡 The following recommendations are generated by IDxVPN based on live traffic analysis this session. Prioritise <strong style={{ color: 'var(--accent-red)' }}>HIGH</strong> items immediately.
                         </p>
                     </div>
-
                     {RECS.map((r, i) => {
                         const Icon = r.icon;
                         return (
-                            <div key={i} className="p-5 rounded-2xl glass-panel flex items-start gap-4" style={{ border: `1px solid ${SEV[r.priority]?.border}` }}>
+                            <div key={i} className="p-5 rounded-2xl glass-panel flex items-start gap-4"
+                                 style={{ border: `1px solid ${SEV[r.priority]?.border}` }}>
                                 <div className="p-2 rounded-lg shrink-0" style={{ background: SEV[r.priority]?.bg, color: SEV[r.priority]?.color }}>
                                     <Icon size={18} />
                                 </div>
                                 <div className="flex-1">
-                                    <span className="px-2 py-0.5 rounded text-xs font-bold mr-2" style={{ background: SEV[r.priority]?.bg, color: SEV[r.priority]?.color, border: `1px solid ${SEV[r.priority]?.border}` }}>
+                                    <span className="px-2 py-0.5 rounded text-xs font-bold mr-2"
+                                          style={{ background: SEV[r.priority]?.bg, color: SEV[r.priority]?.color, border: `1px solid ${SEV[r.priority]?.border}` }}>
                                         {r.priority}
                                     </span>
                                     <p className="mt-2 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{r.text}</p>
