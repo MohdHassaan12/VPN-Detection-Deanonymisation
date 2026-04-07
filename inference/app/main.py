@@ -20,6 +20,7 @@ import numpy as np
 from .model_loader import ModelManager
 from .predict import predict_flow
 from .utils import extract_features_from_request
+from .enrichment import enrich_ip
 from .auth import authenticate_user, create_access_token, get_current_active_user, get_current_admin_user, fake_users_db, ACCESS_TOKEN_EXPIRE_MINUTES, Token, User
 from datetime import timedelta
 
@@ -342,18 +343,26 @@ async def predict(features: FlowFeatures, request: Request, current_user: User =
         # Broadcast via WebSockets
         try:
             import datetime
+            # Async call to IPinfo & IPQualityScore OSINT feeds
+            dst_target = features.dst_ip or "Unknown"
+            intel = await enrich_ip(dst_target)
+            
             broadcast_msg = {
                 "id": request_id,
                 "time": datetime.datetime.now().strftime("%H:%M:%S"),
                 "src": features.src_ip,
-                "dst": features.dst_ip or "Unknown",
+                "dst": dst_target,
                 "flowType": result["app_class"],
                 "action": result["action"],
                 "confidence": result["intent_confidence"] * 100,
                 "latency": latency_ms,
-                "isVpn": features.is_vpn if features.is_vpn is not None else False,
+                "isVpn": features.is_vpn if features.is_vpn is not None else intel["vpn"] if "vpn" in intel else False,
                 "deanonymised": result["app_class"] not in ["UNKNOWN", "VPN"],
-                "trueApp": result["app_class"]
+                "trueApp": result["app_class"],
+                "coord": intel["coord"],
+                "location": intel["location"],
+                "type": intel["threat_type"],
+                "ipqsFraudScore": intel["fraud_score"]
             }
             asyncio.create_task(ws_manager.broadcast(broadcast_msg))
         except Exception as e:

@@ -20,6 +20,11 @@ const makeLog = () => {
     const action      = isVpn ? wAction() : 'ALLOW';
     const confidence  = isVpn ? 82 + ~~(Math.random() * 17) : 40 + ~~(Math.random() * 35);
     const now         = new Date();
+    
+    // Geographical OSINT fallbacks for dashboard mapping
+    const coord = [ (Math.random() * 360) - 180, (Math.random() * 140) - 70 ];
+    const location = "Unknown Region";
+    
     return {
         id:           _id++,
         time:         now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
@@ -31,6 +36,9 @@ const makeLog = () => {
         trueApp:      deanonymised ? pick(TRUE_APPS) : null,
         confidence,
         action,
+        coord,
+        location,
+        type: isVpn ? 'VPN Node' : 'Direct Route'
     };
 };
 

@@ -1,37 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { ComposableMap, Geographies, Geography, Marker, Line } from 'react-simple-maps';
+import { ComposableMap, Geographies, Geography, Marker, Line, ZoomableGroup } from 'react-simple-maps';
 import { ShieldAlert, Activity, Globe } from 'lucide-react';
+
+import { useDashboardData } from '../../context/DashboardDataContext';
 
 const geoUrl = "https://unpkg.com/world-atlas@2.0.2/countries-110m.json";
 
 // SOC HQ location (e.g., New York)
 const hqCoord = [-74.006, 40.7128];
 
-const generateRandomThreat = () => {
-    return {
-        id: Math.random().toString(36).substr(2, 9),
-        // Random coords, mostly avoiding oceans for realism, but perfectly random [lng, lat]
-        coord: [ (Math.random() * 360) - 180, (Math.random() * 140) - 70 ],
-        type: Math.random() > 0.5 ? 'VPN Node' : 'Tor Exit Router',
-        ip: `${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`,
-        timestamp: new Date().toLocaleTimeString(),
-        confidence: Math.floor(Math.random() * 20) + 80 // 80 to 100
-    };
-};
-
 const CommandCenter = () => {
-    const [threats, setThreats] = useState(() => Array.from({ length: 3 }, generateRandomThreat));
+    const { logs } = useDashboardData();
+    const [threats, setThreats] = useState([]);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            setThreats(prev => {
-                const updated = [...prev, generateRandomThreat()];
-                if (updated.length > 8) updated.shift(); // Keep max 8 active routes
-                return updated;
-            });
-        }, 3000); // New threat every 3 seconds
-        return () => clearInterval(interval);
-    }, []);
+        // Extract recent high-risk intercepts from logs (last 8)
+        const recentThreats = logs
+            .filter(log => log.isVpn || log.action === 'BLOCK' || log.action === 'CHALLENGE')
+            .slice(0, 8)
+            .map(log => ({
+                id: log.id,
+                coord: log.coord || [(Math.random() * 360) - 180, (Math.random() * 140) - 70],
+                type: log.type || (log.isVpn ? 'VPN Node' : 'Anomalous Entry'),
+                ip: log.src.split(':')[0], // Drop port for display
+                timestamp: log.time,
+                confidence: log.confidence || 85,
+                location: log.location || "Unknown"
+            }));
+            
+        setThreats(recentThreats);
+    }, [logs]);
 
     return (
         <div className="flex flex-col h-full gap-6">
@@ -76,8 +74,8 @@ const CommandCenter = () => {
                                     <span style={{ color: 'var(--text-muted)' }}>{t.timestamp}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span style={{ color: 'var(--text-secondary)' }}>{t.type}</span>
-                                    <span style={{ color: 'var(--accent-red)' }}>{t.confidence}% Risk</span>
+                                    <span style={{ color: 'var(--text-secondary)' }}>{t.location !== "Unknown" ? t.location : t.type}</span>
+                                    <span style={{ color: 'var(--accent-red)' }}>{t.confidence.toFixed(1)}% Risk</span>
                                 </div>
                             </div>
                         ))}
@@ -88,52 +86,54 @@ const CommandCenter = () => {
                     projectionConfig={{ scale: 180, center: [0, 20] }}
                     className="w-full h-full object-cover"
                 >
-                    <Geographies geography={geoUrl}>
-                        {({ geographies }) =>
-                            geographies.map((geo) => (
-                                <Geography
-                                    key={geo.rsmKey}
-                                    geography={geo}
-                                    fill="var(--bg-surface)"
-                                    stroke="var(--border)"
-                                    strokeWidth={0.5}
-                                    style={{
-                                        default: { outline: "none" },
-                                        hover: { fill: "var(--accent-blue-glow)", outline: "none" },
-                                        pressed: { outline: "none" },
-                                    }}
-                                />
-                            ))
-                        }
-                    </Geographies>
+                    <ZoomableGroup center={[0, 20]} zoom={1.2} maxZoom={8}>
+                        <Geographies geography={geoUrl}>
+                            {({ geographies }) =>
+                                geographies.map((geo) => (
+                                    <Geography
+                                        key={geo.rsmKey}
+                                        geography={geo}
+                                        fill="var(--bg-surface)"
+                                        stroke="var(--border)"
+                                        strokeWidth={0.5}
+                                        style={{
+                                            default: { outline: "none" },
+                                            hover: { fill: "var(--accent-blue-glow)", outline: "none" },
+                                            pressed: { outline: "none" },
+                                        }}
+                                    />
+                                ))
+                            }
+                        </Geographies>
 
-                    {/* Threat Links */}
-                    {threats.map((t, index) => (
-                        <Line
-                            key={t.id}
-                            from={t.coord}
-                            to={hqCoord}
-                            stroke="url(#gradient)"
-                            strokeWidth={1.5}
-                            strokeLinecap="round"
-                            className="transition-all duration-1000"
-                            style={{ opacity: 0.6 + (index * 0.05) }}
-                        />
-                    ))}
+                        {/* Threat Links */}
+                        {threats.map((t, index) => (
+                            <Line
+                                key={t.id}
+                                from={t.coord}
+                                to={hqCoord}
+                                stroke="url(#gradient)"
+                                strokeWidth={1.5}
+                                strokeLinecap="round"
+                                className="transition-all duration-1000"
+                                style={{ opacity: 0.6 + (index * 0.05) }}
+                            />
+                        ))}
 
-                    {/* HQ Marker */}
-                    <Marker coordinates={hqCoord}>
-                        <circle r={6} fill="var(--accent-blue)" />
-                        <circle r={12} fill="var(--accent-blue)" opacity={0.3} className="animate-ping" />
-                    </Marker>
-
-                    {/* Threat Markers */}
-                    {threats.map((t) => (
-                        <Marker key={t.id} coordinates={t.coord}>
-                            <circle r={4} fill="var(--accent-red)" />
-                            <circle r={8} fill="currentColor" opacity={0.2} style={{ color: 'var(--accent-red)' }} className="animate-ping" />
+                        {/* HQ Marker */}
+                        <Marker coordinates={hqCoord}>
+                            <circle r={4} fill="var(--accent-blue)" />
+                            <circle r={8} fill="var(--accent-blue)" opacity={0.3} className="animate-ping" />
                         </Marker>
-                    ))}
+
+                        {/* Threat Markers */}
+                        {threats.map((t) => (
+                            <Marker key={t.id} coordinates={t.coord}>
+                                <circle r={3} fill="var(--accent-red)" />
+                                <circle r={6} fill="currentColor" opacity={0.2} style={{ color: 'var(--accent-red)' }} className="animate-ping" />
+                            </Marker>
+                        ))}
+                    </ZoomableGroup>
 
                     <defs>
                         <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
