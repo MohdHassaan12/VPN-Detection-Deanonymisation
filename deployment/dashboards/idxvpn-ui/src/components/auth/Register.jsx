@@ -150,7 +150,7 @@ const Register = () => {
                 <div className="relative z-10 space-y-6 animate-fade-in-up delay-100">
                     <div>
                         {/* IDxVPN heading */}
-                        <h1 className="text-5xl font-black leading-tight mb-3"
+                        <h1 className="text-3xl font-black leading-tight mb-2"
                             style={{
                                 background: 'linear-gradient(135deg, #ffffff 40%, var(--accent-blue) 100%)',
                                 WebkitBackgroundClip: 'text',
@@ -161,7 +161,7 @@ const Register = () => {
                         </h1>
 
                         {/* Project subtitle */}
-                        <h2 className="text-xl font-bold text-white mb-4 leading-snug">
+                        <h2 className="text-lg font-bold text-white mb-3 leading-snug">
                             Multi-Layer VPN Detection &amp; Deanonymisation Platform
                         </h2>
 
