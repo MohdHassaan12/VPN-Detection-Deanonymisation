@@ -149,21 +149,29 @@ const Register = () => {
                 {/* Copy */}
                 <div className="relative z-10 space-y-6 animate-fade-in-up delay-100">
                     <div>
-                        <h1 className="text-4xl font-bold leading-tight text-white mb-3">
-                            Join the <span
-                                className="text-gradient"
-                                style={{ backgroundImage: 'linear-gradient(90deg, var(--accent-purple), var(--accent-blue))' }}
-                            >
-                                AI-Powered
-                            </span><br/>
-                            VPN Detection Platform
+                        {/* IDxVPN heading */}
+                        <h1 className="text-5xl font-black leading-tight mb-3"
+                            style={{
+                                background: 'linear-gradient(135deg, #ffffff 40%, var(--accent-blue) 100%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                            }}
+                        >
+                            IDxVPN
                         </h1>
-                        <p style={{ color: 'hsl(215,20%,72%)', lineHeight: 1.7 }} className="text-base max-w-sm mb-5">
+
+                        {/* Project subtitle */}
+                        <h2 className="text-xl font-bold text-white mb-4 leading-snug">
+                            Multi-Layer VPN Detection &amp; Deanonymisation Platform
+                        </h2>
+
+                        {/* Description */}
+                        <p style={{ color: 'hsl(215,20%,72%)', lineHeight: 1.75 }} className="text-base max-w-sm mb-5">
                             Monitor real-time VPN traffic, detect encrypted flows,
                             and analyze behavioral deanonymisation using our
-                            multi-layer AI pipeline.
+                            multi-layer Machine learning system.
                         </p>
-                        
+
                         {/* Badges */}
                         <div className="flex flex-wrap gap-2">
                             <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium" style={{ background: 'hsla(215,100%,62%,0.15)', color: 'var(--accent-blue)', border: '1px solid hsla(215,100%,62%,0.25)' }}>
