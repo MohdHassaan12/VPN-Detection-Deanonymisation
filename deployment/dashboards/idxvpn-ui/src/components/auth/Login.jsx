@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Shield, Eye, EyeOff, Wifi, Lock, AlertTriangle } from 'lucide-react';
+import shieldLogo from '../../assets/idxvpn-shield-logo.png';
 
 const Login = () => {
     const [username, setUsername]   = useState('');
@@ -73,10 +74,10 @@ const Login = () => {
                 <div className="relative z-10 animate-fade-in-up">
                     <div className="flex items-center gap-3 mb-2">
                         <div
-                            className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm"
-                            style={{ background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))', boxShadow: '0 4px 16px var(--accent-blue-glow)' }}
+                            className="w-11 h-11 rounded-xl overflow-hidden shrink-0"
+                            style={{ boxShadow: '0 0 18px hsla(210,100%,60%,0.55)', border: '1.5px solid hsla(210,100%,60%,0.35)' }}
                         >
-                            ID
+                            <img src={shieldLogo} alt="IDxVPN" className="w-full h-full object-cover" style={{ objectPosition: '50% 38%', transform: 'scale(1.35)' }} />
                         </div>
                         <span className="text-white font-bold text-xl tracking-wide">IDxVPN</span>
                     </div>
@@ -165,10 +166,10 @@ const Login = () => {
                     {/* Mobile logo */}
                     <div className="lg:hidden flex items-center gap-3 mb-8 animate-fade-in-up">
                         <div
-                            className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm"
-                            style={{ background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))' }}
+                            className="w-9 h-9 rounded-xl overflow-hidden shrink-0"
+                            style={{ boxShadow: '0 0 14px hsla(210,100%,60%,0.45)', border: '1.5px solid hsla(210,100%,60%,0.3)' }}
                         >
-                            ID
+                            <img src={shieldLogo} alt="IDxVPN" className="w-full h-full object-cover" style={{ objectPosition: '50% 38%', transform: 'scale(1.35)' }} />
                         </div>
                         <div>
                             <div className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>IDxVPN</div>
