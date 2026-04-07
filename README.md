@@ -4,7 +4,7 @@
 
 <br/>
 
-# IDxVPN — Multi-Layer VPN Detection & Deanonymisation Platform
+# IDxVPN — Multi-Layer System for VPN Detection & Deanonymisation using Machine Learning
 
 ### Using Machine Learning · Real-Time Network Traffic Intelligence
 
@@ -320,7 +320,8 @@ This project uses **exclusively passive, consent-aware detection**:
 ## 👤 Author
 
 **MD Hassan**
-MSc Artificial Intelligence — University of Southampton
+B.Tech. Computer Science — Dept. of CS & IT
+Maulana Azad National Urdu University
 
 ---
 
