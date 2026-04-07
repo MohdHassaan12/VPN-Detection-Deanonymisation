@@ -1,272 +1,130 @@
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=30&pause=1000&color=00F7FF&center=true&vCenter=true&width=800&lines=VPN+Detection+%26+Deanonymisation;4-Layer+ML+Inspection+Pipeline;Privacy-First+Risk+Scoring+Engine;Real-Time+Traffic+Classification" alt="Typing SVG" />
+<img src="docs/screenshots/welcome.png" alt="IDxVPN Platform" width="860"/>
 
 <br/>
 
-![Python](https://img.shields.io/badge/Python-3.9+-blue?style=for-the-badge&logo=python&logoColor=white)
-![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange?style=for-the-badge&logo=tensorflow&logoColor=white)
-![XGBoost](https://img.shields.io/badge/XGBoost-Latest-red?style=for-the-badge&logo=xgboost&logoColor=white)
+# IDxVPN — Multi-Layer VPN Detection & Deanonymisation Platform
+
+### Using Machine Learning · Real-Time Network Traffic Intelligence
+
+<br/>
+
+![Python](https://img.shields.io/badge/Python-3.9+-3572A5?style=for-the-badge&logo=python&logoColor=white)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-Vite-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Docker](https://img.shields.io/badge/Docker-Containerised-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-Native-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?style=for-the-badge&logo=redis&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)
 
 <br/>
 
-> **A production-ready, multi-layer ML pipeline for detecting and classifying VPN traffic with risk-based policy enforcement — capable of identifying application type, scoring malicious intent (0–99), and enforcing adaptive ALLOW / CHALLENGE / BLOCK decisions in under 200ms.**
+> **A production-grade, 4-layer ML inspection pipeline for real-time VPN traffic detection, application classification, and risk-based policy enforcement — all under 200ms.**
+
+<br/>
+
+🔗 **[Live Demo →](https://mohdhassaan12.github.io/VPN-Detection-Deanonymisation/)**
 
 </div>
 
 ---
 
----
+## 📌 Overview
 
-## 🔍 Problem Statement
+Modern VPN usage is exponentially growing — not just for privacy, but increasingly as a vector for malicious actors to obscure identity, evade geofencing, and bypass enterprise controls. Traditional deep-packet inspection (DPI) either **over-blocks** (harming legitimate users) or **under-detects** (missing obfuscated protocols like WireGuard, Shadowsocks, ECH/TLS 1.3).
 
-Modern VPN usage has grown exponentially — not only for legitimate privacy reasons, but increasingly as a vehicle for malicious actors to obfuscate their origin, evade detection, and conduct cyberattacks. Existing security systems tend to either **over-block** (treating all VPN traffic as suspicious) or **under-detect** (missing sophisticated obfuscation like ECH/TLS 1.3 fingerprint spoofing).
+**IDxVPN** solves this with a **4-layer multi-model pipeline**:
 
-### The Core Challenges
-
-| Challenge | Description |
-|-----------|-------------|
-| **Traffic Obfuscation** | Modern VPN protocols (WireGuard, Shadowsocks, ECH) make traffic appear identical to benign HTTPS, defeating traditional DPI rules |
-| **Privacy vs. Security Tension** | Blanket VPN blocks harm legitimate users (journalists, remote workers, privacy-conscious individuals) while sophisticated attackers simply rotate infrastructure |
-| **Scale & Latency** | Enterprise networks handle millions of flows per second — any inspection overhead directly impacts user experience |
-| **Intent Invisibility** | Knowing *what* application is running is not enough; you need to infer *why* — distinguishing a user watching Netflix over VPN from one exfiltrating data |
-| **Dataset Fragmentation** | No single public dataset captures VPN traffic + application types + malicious intent, requiring careful multi-dataset fusion |
-
-### Our Approach
-
-This project answers: **"Can we detect VPN traffic, classify the application, and infer malicious intent — all within 200ms, without blocking legitimate users?"**
-
-We implement a **privacy-first, risk-based** pipeline that:
-1. **Passively detects** VPN usage via IP intelligence, TCP/TLS fingerprinting, and MTU analysis — without decrypting content
-2. **Classifies the application** (e.g., BROWSING vs. CHAT vs. C2 beacon) using a CNN trained on Packet-Block images
-3. **Scores risk (0–99)** using XGBoost on behavioural + contextual features
-4. **Responds proportionally** — challenging suspicious traffic with MFA/CAPTCHA rather than blanket blocking
-
-> ⚠️ **Ethical Scope**: This project exclusively uses **passive, consent-aware** detection techniques. Active deanonymisation (e.g., traffic injection, honeypots) is out of scope and would require explicit legal authorisation.
+1. 🛡 **Edge Firewall** — IP intelligence + passive TCP/MTU fingerprinting (`<10ms`)
+2. 🔒 **TLS Termination** — Header extraction + JA3/TLS fingerprinting (`<5ms`)
+3. 🧠 **ML Risk Scoring Engine** — Stage-1 CNN (app class) + Stage-2 Random Forest (risk score 0–99) (`~45ms`)
+4. ⚡ **Policy Engine** — Adaptive `ALLOW / CHALLENGE / BLOCK` decisions (`<1ms`)
 
 ---
 
-## 🎯 Project Overview
+## 🎯 Key Features
 
-This system implements a **4-layer architecture** that:
-1. **Filters** obvious threats at the edge (<10ms)
-2. **Decrypts** traffic at the gateway for deep inspection
-3. **Classifies** applications using CNN (Packet-Block images)
-4. **Scores** intent/risk using XGBoost for adaptive policy
-
-**Key Features**:
-- ✅ Two-stage ML pipeline (App → Intent)
-- ✅ Privacy-respecting (VPN ≠ auto-block)
-- ✅ Low latency (<200ms end-to-end)
-- ✅ Kubernetes-native with autoscaling
-- ✅ Comprehensive dataset support (VNAT, ISCX, CIC-IDS, USTC)
+| Feature | Detail |
+|---------|--------|
+| **Two-Stage ML Pipeline** | CNN classifies the application type; Random Forest scores intent/risk |
+| **Real-Time Packet Capture** | Live tshark/PyShark ingestion with <200ms end-to-end latency |
+| **Privacy-First Scoring** | VPN detection alone ≠ auto-block; legitimate users are protected |
+| **Adaptive Enforcement** | `CHALLENGE` (MFA/CAPTCHA) for medium risk instead of blanket blocks |
+| **IP Intelligence** | IPQualityScore + IPinfo APIs for geolocation and fraud scoring |
+| **Interactive Dashboard** | React/Vite SOC dashboard with WebSocket live updates |
+| **PDF Report Export** | Generated SOC reports with threat feed, anomaly log, and recommendations |
 
 ---
 
-## 🏗️ System Architecture
+## 🖥️ Platform Screenshots
 
-The system is designed as a **4-layer inspection pipeline** that progressively applies heavier (but more accurate) analysis, ensuring fast exits for obvious cases and deep ML scoring only when warranted.
-
-### Architecture Diagram
-
-```mermaid
-flowchart TD
-    %% Define Styles
-    classDef client fill:#d4edda,stroke:#28a745,stroke-width:2px;
-    classDef infra fill:#cce5ff,stroke:#007bff,stroke-width:2px;
-    classDef ml fill:#f8d7da,stroke:#dc3545,stroke-width:2px;
-    classDef ui fill:#fff3cd,stroke:#ffc107,stroke-width:2px;
-    classDef cloud fill:#e2e3e5,stroke:#6c757d,stroke-width:2px;
-
-    %% 1. Data Source & Preprocessing
-    subgraph DATA["1. Data Ingestion & Preprocessing"]
-        RAW[Raw Network Traffic / PCAP]
-        PREP["pcap_to_packetblock.py\n(Preprocessing & Unification)"]
-        IMG[64x64 Packet-Block Images]
-        FEAT[25+ Flow Features & Metadata]
-
-        RAW --> PREP
-        PREP --> IMG
-        PREP --> FEAT
-    end
-
-    %% 2. Cloud Training (DigitalOcean)
-    subgraph CLOUD["2. Model Training — DigitalOcean Cloud"]
-        TR_CNN[Train Stage 1: CNN App Classifier]
-        TR_XGB[Train Stage 2: XGBoost Intent Classifier]
-        MODELS[("Trained Models\n.h5 / .xgb")]
-
-        IMG --> TR_CNN
-        FEAT --> TR_XGB
-        TR_CNN -->|Yields App_Class| TR_XGB
-        TR_CNN --> MODELS
-        TR_XGB --> MODELS
-    end
-
-    %% 3. Live Inference Pipeline (Backend)
-    subgraph BACKEND["3. Live Inference Service — FastAPI & Docker"]
-        direction TB
-        L1["Layer 1: Edge Firewall\nIP Intelligence, Fast block/pass"]
-        L2["Layer 2: Load Balancer / TLS Termination\nSNI, RTT, JA3 extraction"]
-
-        subgraph L3G["Layer 3: ML Risk Scoring Engine"]
-            S1["Stage 1: CNN App Classifier\nDetermines Application"]
-            S2["Stage 2: XGBoost Intent Classifier\nCalculates Risk Score 0-99"]
-            S1 --> |App_Class| S2
-        end
-
-        L4["Layer 4: Policy Engine\nEvaluates rules against Risk Score\nActions: ALLOW / CHALLENGE / BLOCK"]
-
-        REDIS[("Redis Cache\nIn-memory state & Stream data")]
-        WS(("WebSocket Server\nReal-time events"))
-
-        L1 --> L2
-        L2 --> S1
-        S2 --> L4
-        L4 --> REDIS
-        REDIS --> WS
-    end
-
-    %% 4. Dashboard (Frontend)
-    subgraph FRONTEND["4. Frontend Dashboard — React/Vite"]
-        NGINX[Nginx Reverse Proxy / Router]
-        UI_OVER[Overview / Health Metrics]
-        UI_ANA["Analytics & Deanonymisation\nCharts & Tables"]
-        UI_POL[Policy Evaluation Engine]
-        UI_SIM[Interactive Traffic Simulator]
-
-        NGINX --> UI_OVER
-        NGINX --> UI_ANA
-        NGINX --> UI_POL
-        NGINX --> UI_SIM
-    end
-
-    %% Connections across subgraphs
-    DATA -.->|Prepares Data For| CLOUD
-    MODELS == Loads At Startup ==> BACKEND
-
-    TRAFFIC((Live Network Traffic)) --> L1
-
-    WS == Sub-200ms Live Stream ==> NGINX
-    NGINX <--> API{REST API}
-    API <--> BACKEND
-
-    %% Apply classes
-    class RAW,TRAFFIC client;
-    class PREP,IMG,FEAT infra;
-    class TR_CNN,TR_XGB,MODELS cloud;
-    class L1,L2,L3G,S1,S2,L4 ml;
-    class UI_OVER,UI_ANA,UI_POL,UI_SIM,NGINX ui;
-```
-
-### Layer-by-Layer Breakdown
-
-| Layer | Component | Technology | Latency |
-|-------|-----------|-----------|---------|
-| **1 — Edge Firewall** | IP reputation, MTU/MSS fingerprinting | IPQualityScore API, passive TCP | `< 10ms` |
-| **2 — TLS Termination** | SNI extraction, JA3 fingerprinting, RTT probing | mTLS gateway | `< 20ms` |
-| **3 — ML Engine** | CNN (app class) → XGBoost (risk score) | TensorFlow Serving + XGBoost | `~100ms` |
-| **4 — Policy Engine** | Rule evaluation → ALLOW / CHALLENGE / BLOCK | FastAPI + Redis rule cache | `< 5ms` |
-
-**Total end-to-end target: `< 200ms` at P99.**
-
-### Architecture Layers Detail
-
-#### Layer 1: Edge Firewall
-- **IP Intelligence** (IPQualityScore/IPinfo API)
-- **MTU/MSS Fingerprinting** (passive TCP analysis)
-- **Latency**: <10ms
-
-#### Layer 2: TLS Termination
-- Decrypt traffic at gateway
-- Extract headers + fingerprints
-- Defeats ECH/TLS 1.3 obfuscation
-
-#### Layer 3: ML Risk Scoring Engine
-
-**Stage-1: CNN (Application Classifier)**
-- Input: 64×64×3 Packet-Block images
-- Output: 8 app classes (BROWSING, CHAT, VOIP, VIDEO, etc.)
-- Latency: ~50ms
-
-**Stage-2: XGBoost (Intent Classifier)**
-- Input: 25-feature vector (IP intel + flow stats + behavioral)
-- Output: Risk score 0-99
-- Latency: ~50ms
-
-#### Layer 4: Policy Engine
-
-| Risk Score | Action | Description |
-|------------|--------|-------------|
-| 0-20 | **ALLOW** | Low risk, legitimate traffic |
-| 21-60 | **CHALLENGE** | MFA/CAPTCHA required |
-| 61-99 | **BLOCK** | High risk, suspicious activity |
+### Welcome Page
+![Welcome Page](docs/screenshots/welcome.png)
 
 ---
 
-## 📊 Dataset
-
-The pipeline fuses **four public datasets**, each contributing a different dimension of ground truth:
-
-| Dataset | Source | Size | Format | Key Labels |
-|---------|--------|------|--------|------------|
-| **VNAT (LL MIT)** | MIT Lincoln Laboratory | ~36 GB | PCAP | 5 app types (BROWSING, CHAT, VOIP, VIDEO, C2) |
-| **ISCXVPN 2016** | Univ. of New Brunswick | ~28 GB | PCAP | VPN vs Non-VPN, 7 app categories |
-| **CIC-IDS 2017** | Canadian Institute for Cybersecurity | ~50 GB (Parquet) | CSV/Parquet | Benign + 7 attack types (DoS, PortScan, Botnet, etc.) |
-| **USTC-TFC 2016** | USTC — China | ~8 GB | PCAP | 10 benign app classes + 8 malware families |
-
-### Preprocessing Pipeline
-
-```
-Raw PCAP Files
-      │
-      ▼
-pcap_to_packetblock.py
-      │
-      ├──► 64×64×3 PNG Images  ──► Stage-1 CNN Training
-      │     (Packet-Block visual encoding)
-      │
-      └──► 25-feature CSV  ──────► Stage-2 XGBoost Training
-            (IP intel + flow stats + behavioral signals)
-```
-
-**Feature groups for Stage-2:**
-- **IP Intelligence** (fraud score, ISP type, proxy flag, country risk)
-- **Flow Statistics** (duration, byte count, packet inter-arrival time, packet size distribution)
-- **Behavioural Signals** (human score, time-of-day, retransmission ratio)
-- **TLS Metadata** (JA3 hash, SNI, certificate age)
-- **Stage-1 Output** (predicted application class — feeds directly into Stage-2)
-
-### Unified Dataset Stats (after merge & deduplication)
-
-| Split | Samples | VPN Flows | Non-VPN Flows |
-|-------|---------|-----------|---------------|
-| Train | ~1.2M | ~480K | ~720K |
-| Validation | ~150K | ~60K | ~90K |
-| Test | ~150K | ~60K | ~90K |
+### Live Traffic Dashboard
+![Dashboard](docs/screenshots/dashboard.png)
+*Real-time stat cards, live traffic volume chart, risk score distribution, and per-flow decision log — all updating via WebSocket stream.*
 
 ---
 
-## 📈 Results
+### Command Center — Threat Intelligence
+![Command Center](docs/screenshots/command_center.png)
+*Live threat feed, flagged IP table, per-flow action breakdown (ALLOW/CHALLENGE/BLOCK), and interactive map.*
 
-### Performance Targets vs. Achieved
+---
 
-| Metric | Target | Status |
-|--------|--------|--------|
-| End-to-end Latency (P99) | `< 200ms` | ✅ Achieved (FastAPI + Redis) |
-| Stage-1 CNN App Accuracy | `> 90% F1` | ⬜ Training in progress |
-| Stage-2 XGBoost AUC | `> 0.95` | ⬜ Training in progress |
-| False Positive Rate | `< 2%` | ⬜ Validation pending |
-| Throughput | `10K req/s` | ✅ Validated (k6 load testing) |
+### Deanonymisation Core
+![Deanonymisation Core](docs/screenshots/deanonymisation_core.png)
+*VPN provider attribution, behavioral profiling, identity scoring, and origin clustering.*
 
-### Stage-1: CNN Application Classifier
+---
 
-The CNN treats each network flow as a **64×64×3 pixel image** (bytes encoded as RGB channels). This approach — inspired by *FlowPic (NDSS 2020)* and *PacketPrint (IEEE S&P 2020)* — allows standard image classification CNNs to learn spatial byte-level patterns unique to each application protocol.
+### Analytics & Telemetry
+![Analytics](docs/screenshots/analytics.png)
+*Per-application breakdown, VPN origin heatmap, 24h session trend, and anomaly detection charts.*
+
+---
+
+### Security Reports & Threats
+![Reports & Threats](docs/screenshots/reports.png)
+*Overview KPIs, threat intelligence feed, anomaly severity log, network health, and AI-generated recommendations. Includes one-click PDF export.*
+
+---
+
+### Multi-Layer Architecture Explorer
+![Architecture View](docs/screenshots/architecture.png)
+*Interactive breakdown of all 4 pipeline layers with latency metrics and technology stack per layer.*
+
+---
+
+## 🏗️ 4-Layer Detection Architecture
+
+| # | Layer | Role | Technology | Latency |
+|---|-------|------|------------|---------|
+| **L1** | **Edge Firewall** | IP reputation, MTU/MSS fingerprinting, fast allow/block | IPQualityScore, IPinfo, passive TCP | `<10ms` |
+| **L2** | **TLS Termination** | SNI extraction, JA3 fingerprinting, RTT probing | mTLS gateway | `<5ms` |
+| **L3** | **ML Risk Scoring Engine** | CNN → Random Forest two-stage inference | TensorFlow + scikit-learn | `~45ms` |
+| **L4** | **Policy Engine** | Rule evaluation → ALLOW / CHALLENGE / BLOCK | FastAPI + Redis rule cache | `<1ms` |
+
+**Total end-to-end target: `<200ms` at P99.**
+
+### Policy Thresholds
+
+| Risk Score | Action | Meaning |
+|-----------|--------|---------|
+| 0 – 20 | 🟢 **ALLOW** | Low-risk, legitimate traffic |
+| 21 – 60 | 🟡 **CHALLENGE** | MFA / CAPTCHA required |
+| 61 – 99 | 🔴 **BLOCK** | High-risk, flagged activity |
+
+---
+
+## 📊 ML Pipeline
+
+### Stage 1 — CNN Application Classifier
+
+Each network flow is encoded as a **64×64×3 Packet-Block image** (raw bytes → RGB channels). A CNN trained on this visual representation learns spatial byte-level patterns unique to each protocol.
 
 ```
 Input  →  64×64×3 Packet-Block Image
@@ -274,172 +132,94 @@ Output →  8-class softmax
           [BROWSING, CHAT, VOIP, VIDEO, FILE_TRANSFER, STREAMING, TUNNEL, C2]
 ```
 
-### Stage-2: XGBoost Intent Classifier
+> Inspired by *FlowPic (NDSS 2020)* and *PacketPrint (IEEE S&P 2020)*.
 
-Takes the 25-feature flow vector **plus** the Stage-1 predicted app class and outputs a continuous **risk score (0–99)**:
+### Stage 2 — Random Forest Risk Scorer
 
-| Risk Bucket | Score Range | Action | Rate (expected) |
-|-------------|-------------|--------|-----------------|
-| 🟢 Low Risk | 0 – 20 | **ALLOW** | ~75% of flows |
-| 🟡 Medium Risk | 21 – 60 | **CHALLENGE** (MFA/CAPTCHA) | ~20% of flows |
-| 🔴 High Risk | 61 – 99 | **BLOCK** | ~5% of flows |
+Takes the 25-feature flow vector **plus** Stage-1's predicted app class and outputs a continuous **risk score (0–99)**:
 
-### 🎓 Key Innovations & Academic Grounding
-
-1. **Packet-Block Images** — Novel visual encoding of raw byte payloads for CNN input; avoids payload decryption
-2. **Two-Stage Pipeline** — Separates *application identification* ("what") from *intent scoring* ("why"), reducing FPR
-3. **Privacy-First Scoring** — VPN detection alone contributes only ~15pts to the 100-point risk budget; legitimate VPN users are not blocked
-4. **Adaptive Response** — CHALLENGE instead of BLOCK for medium-risk scores; reduces friction for legitimate users while adding cost for attackers
+- **IP Intelligence** — fraud score, ISP type, proxy flag, country risk
+- **Flow Statistics** — duration, byte count, inter-arrival time, packet size distribution
+- **Behavioural Signals** — human score, time-of-day, retransmission ratio
+- **TLS Metadata** — JA3 hash, SNI, certificate age
+- **Stage-1 Output** — predicted application class (feeds directly into Stage-2)
 
 ---
 
-## 📸 Screenshots & Demo
+## 📦 Dataset
 
-### 🖥️ Overview — Live Traffic Dashboard
+Four public datasets fused to provide ground truth across all dimensions:
 
-The interactive React + Vite dashboard provides real-time traffic analytics, policy management, and a hands-on traffic simulator:
-
-![VPN Detection Dashboard Overview](docs/dashboard_screenshot.png)
-
-*Real-time stat cards, live traffic volume chart, risk score distribution, and per-flow decision log — all updating via WebSocket stream at sub-200ms latency.*
-
----
-
-### 🔬 Analytics & Deanonymisation Page
-
-![Analytics & Deanonymisation](docs/analytics_screenshot.png)
-
-*Top deanonymised apps breakdown, VPN traffic origin world heatmap, flagged session table (with VPN provider attribution), and 24h session trend chart.*
-
----
-
-### Dashboard Pages Summary
-
-| Page | Description |
-|------|-------------|
-| **Overview** | System health, live throughput, real-time risk score distribution, recent decisions |
-| **Analytics & Deanonymisation** | Per-app breakdown, VPN provider attribution, world origin heatmap, time-series anomaly charts |
-| **Policy Engine** | Configure ALLOW/CHALLENGE/BLOCK thresholds, whitelist trusted IPs, view audit log |
-| **Traffic Simulator** | Manually craft packet flows, run them through the full ML pipeline, inspect the step-by-step decision trace |
-
-### Inference API — Sample Response
-
-```json
-{
-  "request_id": "req_7f3a9c",
-  "app_class": "BROWSING",
-  "risk_score": 18,
-  "action": "ALLOW",
-  "reason": "Low fraud score, legitimate ISP, normal flow behaviour",
-  "latency_ms": 143,
-  "stage1_confidence": 0.97,
-  "stage2_features_used": 25
-}
-```
+| Dataset | Source | Size | Key Labels |
+|---------|--------|------|------------|
+| **VNAT (MIT LL)** | MIT Lincoln Laboratory | ~36 GB | 5 app types (BROWSING, CHAT, VOIP, VIDEO, C2) |
+| **ISCXVPN 2016** | Univ. of New Brunswick | ~28 GB | VPN vs Non-VPN, 7 app categories |
+| **CIC-IDS 2017** | Canadian Institute for Cybersecurity | ~50 GB | Benign + 7 attack types |
+| **USTC-TFC 2016** | USTC — China | ~8 GB | 10 benign apps + 8 malware families |
 
 ---
 
 ## 📁 Project Structure
 
 ```
-├── preprocessing/           # Data pipeline & ETL
-│   ├── scripts/
-│   │   ├── pcap_to_packetblock.py    # PCAP → Images
-│   │   ├── merge_datasets.py         # Dataset unification
-│   │   └── feature_extractor.py      # Feature engineering
-│   └── configs/
-│       └── merge_config.yaml
+idxvpn/
+├── preprocessing/
+│   └── scripts/
+│       ├── pcap_to_packetblock.py      # PCAP → 64×64 images
+│       ├── merge_datasets.py           # Dataset unification
+│       └── feature_extractor.py        # 25-feature engineering
 │
-├── model_training/          # ML model training
-│   ├── stage1_app_classifier/        # CNN (8 app classes)
-│   └── stage2_intent_classifier/     # XGBoost (risk scoring)
+├── model_training/
+│   ├── stage1_app_classifier/          # CNN (8-class)
+│   └── stage2_intent_classifier/       # Random Forest (risk 0–99)
 │
-├── inference/               # Production inference service
+├── inference/
 │   ├── app/
-│   │   ├── main.py                   # FastAPI service
-│   │   ├── model_loader.py           # TF + XGBoost loader
-│   │   ├── predict.py                # Two-stage pipeline
-│   │   └── utils.py                  # Feature extraction
-│   └── requirements.txt
+│   │   ├── main.py                     # FastAPI service
+│   │   ├── predict.py                  # Two-stage pipeline
+│   │   └── utils.py                    # Feature helpers
+│   └── capture/
+│       └── wireshark_capture.py        # Live tshark/PyShark capture
 │
-├── deployment/              # Kubernetes deployment
-│   ├── docker/
-│   │   └── Dockerfile.inference-api
-│   └── k8s/
-│       ├── 01-namespace.yaml
-│       ├── 02-config.yaml
-│       ├── 03-minio.yaml             # Model storage
-│       ├── 04-redis.yaml             # Cache
-│       ├── 05-tf-serving.yaml        # Stage-1 CNN server
-│       ├── 06-inference-api.yaml     # FastAPI + HPA
-│       └── 07-ingress.yaml
+├── deployment/
+│   ├── dashboards/idxvpn-ui/           # React/Vite SOC dashboard
+│   └── k8s/                            # Kubernetes manifests
 │
-├── docs/
-│   ├── architecture/
-│   │   ├── SYSTEM_ARCHITECTURE.md    # Original design doc
-│   │   └── IMPLEMENTATION_GUIDE.md   # Complete guide
-│   └── preprocessing/
-│       └── PREPROCESSING_GUIDE.md
-│
-└── datasets/                # Raw datasets
-    ├── CIC-IDS2017/
-    └── USTC-TFC2016-master/
+└── docs/
+    └── screenshots/                    # Platform screenshots
 ```
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Generate Packet-Block Images
+### 1. Install Dependencies
 
 ```bash
-cd preprocessing
+# Inference service
+cd inference && pip install -r requirements.txt
 
-# Process USTC dataset
-python scripts/pcap_to_packetblock.py \
-  --pcap-dir ../USTC-TFC2016-master/Benign/ \
-  --out-dir ./outputs/packetblock_images/ \
-  --img-size 64
-
-# Output: ~500 images + manifest.csv
+# Dashboard (development)
+cd deployment/dashboards/idxvpn-ui && npm install && npm run dev
 ```
 
-### 2. Train Models
+### 2. Run Live Capture
 
 ```bash
-# Stage-1: Application Classifier (CNN)
-cd model_training/stage1_app_classifier
-python train_cnn.py --image-dir ../../preprocessing/outputs/packetblock_images/ --epochs 50
-
-# Stage-2: Intent Classifier (XGBoost)
-cd ../stage2_intent_classifier
-python train_xgboost.py --input ../../preprocessing/outputs/stage2_features.csv --n-estimators 200
+# Requires tshark / Wireshark installed + root/sudo
+python inference/capture/wireshark_capture.py --interface eth0
 ```
 
-### 3. Deploy to Kubernetes
+### 3. Start Inference API
 
 ```bash
-cd deployment/k8s
-
-# Deploy all components
-kubectl apply -f 01-namespace.yaml
-kubectl apply -f 02-config.yaml
-kubectl apply -f 03-minio.yaml
-kubectl apply -f 04-redis.yaml
-kubectl apply -f 05-tf-serving.yaml
-kubectl apply -f 06-inference-api.yaml
-
-# Verify
-kubectl get pods -n vpn-inference
+cd inference
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 ```
 
-### 4. Test Inference
+### 4. Test a Prediction
 
 ```bash
-# Port-forward
-kubectl port-forward -n vpn-inference svc/inference-api 8080:8080
-
-# Test prediction
 curl -X POST http://localhost:8080/predict \
   -H "Content-Type: application/json" \
   -d '{
@@ -450,137 +230,106 @@ curl -X POST http://localhost:8080/predict \
     "protocol": "TCP",
     "is_vpn": true,
     "fraud_score": 25,
-    "flow_duration": 45.2,
-    "human_score": 0.92
+    "flow_duration": 45.2
   }'
+```
+
+**Sample response:**
+
+```json
+{
+  "request_id": "req_7f3a9c",
+  "app_class": "BROWSING",
+  "risk_score": 18,
+  "action": "ALLOW",
+  "reason": "Low fraud score, legitimate ISP, normal flow behaviour",
+  "latency_ms": 143,
+  "stage1_confidence": 0.97
+}
+```
+
+### 5. Deploy to Kubernetes
+
+```bash
+cd deployment/k8s
+kubectl apply -f 01-namespace.yaml
+kubectl apply -f 02-config.yaml
+kubectl apply -f 04-redis.yaml
+kubectl apply -f 06-inference-api.yaml
+kubectl get pods -n vpn-inference
 ```
 
 ---
 
-## 🛠️ Development Setup
+## 📈 Performance Targets
 
-### Prerequisites
-- Python 3.9+
-- Docker
-- Kubernetes (minikube/kind for local testing)
-- kubectl
-
-### Install Dependencies
-
-```bash
-# Preprocessing
-cd preprocessing
-pip install -r requirements.txt
-
-# Inference service
-cd ../inference
-pip install -r requirements.txt
-```
-
-### Run Tests
-
-```bash
-# Unit tests
-pytest inference/tests/
-
-# Integration tests
-pytest preprocessing/tests/
-```
+| Metric | Target | Status |
+|--------|--------|--------|
+| End-to-end Latency (P99) | `<200ms` | ✅ Achieved |
+| Stage-1 CNN App Accuracy | `>90% F1` | ⬜ Training in progress |
+| Stage-2 RF AUC | `>0.95` | ⬜ Training in progress |
+| False Positive Rate | `<2%` | ⬜ Validation pending |
+| Throughput | `10K req/s` | ✅ Validated (k6 load testing) |
 
 ---
 
 ## 🗺️ Roadmap
 
-### ✅ Phase 1: Foundation (Completed)
-- [x] Project structure
-- [x] Packet-Block image generation
-- [x] FastAPI inference service
-- [x] Kubernetes manifests
-- [x] Documentation
+### ✅ Completed
+- [x] 4-layer detection architecture
+- [x] Live packet capture (tshark/PyShark)
+- [x] Two-stage ML pipeline (CNN + Random Forest)
+- [x] Real-time React dashboard with WebSocket stream
+- [x] IP intelligence (IPQualityScore + IPinfo)
+- [x] Interactive world map with geo-tagging
+- [x] Security Reports & Threats suite with PDF export
+- [x] Multi-Layer Architecture explorer page
+- [x] Kubernetes deployment manifests
 
-### ✅ Phase 2: Training (Completed)
-- [x] Train Stage-1 CNN on USTC/VNAT
-- [x] Train Stage-2 XGBoost on CIC-IDS
-- [x] Validate models (>85% accuracy target)
-- [x] Model versioning & registry
-
-### ✅ Phase 3: Deployment (Completed)
-- [x] Deploy to dev cluster
-- [x] Set up monitoring (Prometheus + Grafana)
-- [x] Load testing (k6)
-- [x] Production deployment with canary
-
-### ⬜ Phase 4: Optimization (Future)
-- [ ] GPU acceleration (TensorRT)
-- [ ] Graph anomaly detector (unsupervised)
-- [ ] Feedback loop for continuous learning
-- [ ] A/B testing framework
+### 🔜 In Progress / Future
+- [ ] GPU acceleration (TensorRT optimisation)
+- [ ] Graph anomaly detector (unsupervised GNN)
+- [ ] Persistent historical storage (PostgreSQL)
+- [ ] Automated `iptables`/`nftables` block enforcement
+- [ ] Continuous learning feedback loop from analyst decisions
 
 ---
 
-## 🔒 Security & Ethics
+## 🔒 Ethics & Security
 
-- **Data Minimization**: Only collect necessary features
-- **Retention**: 7 days logs, 30 days training data
-- **GDPR Compliant**: Legitimate interest for fraud prevention
-- **Transparency**: Provide reason codes for all decisions
-- **Appeals**: Human review queue for high-impact blocks
+This project uses **exclusively passive, consent-aware detection**:
+- **No payload decryption** — Packet-Block images encode raw bytes without content inspection
+- **Privacy-first scoring** — VPN usage alone contributes only ~15pts to the 100-point risk budget
+- **Proportional response** — `CHALLENGE` before `BLOCK` for medium-risk flows
+- **Data minimisation** — 7-day log retention; 30-day training data retention
+- **GDPR-aligned** — Legitimate interest basis for fraud prevention
 
-⚠️ **Deanonymisation Warning**: Active techniques (traffic manipulation, honeypots) require legal authorization. This project focuses on passive detection methods.
-
----
-
-## 📚 Documentation
-
-- **[System Architecture](docs/architecture/SYSTEM_ARCHITECTURE.md)**: Original design document
-- **[Implementation Guide](docs/architecture/IMPLEMENTATION_GUIDE.md)**: Complete step-by-step guide
-- **[Deployment Guide](deployment/README.md)**: Kubernetes deployment instructions
-- **[Preprocessing Guide](preprocessing/README.md)**: Data pipeline documentation
+> ⚠️ Active deanonymisation techniques (traffic injection, honeypots) are out of scope and require explicit legal authorisation.
 
 ---
 
-## 🤝 Contributing
+## 📚 References & Academic Grounding
 
-This is a research/academic project. Contributions welcome:
-1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request
-
-**Please ensure**:
-- Code follows PEP 8 style
-- Tests pass (`pytest`)
-- Documentation updated
-
----
-
-## 📄 License
-
-[Specify License]
+- **FlowPic** — Shapira & Shavitt, *NDSS 2020* — Packet-Block visual encoding
+- **PacketPrint** — Rezaei & Liu, *IEEE S&P 2020* — CNN-based traffic fingerprinting
+- **CIC-IDS 2017** — Canadian Institute for Cybersecurity benchmark dataset
+- **ISCXVPN 2016** — Draper-Gil et al. — VPN vs. non-VPN classification dataset
 
 ---
 
 ## 👤 Author
 
-**MD Hassan**  
+**MD Hassan**
+MSc Artificial Intelligence — University of Southampton
 
 ---
 
-## 🙏 Acknowledgments
+## 📄 License
 
-- **Datasets**: VNAT (MIT Lincoln Lab), CIC-IDS (Canadian Institute for Cybersecurity), USTC
-- **Inspiration**: PacketPrint (IEEE S&P 2020), FlowPic (NDSS 2020)
-- **Tools**: TensorFlow, XGBoost, FastAPI, Kubernetes
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 📞 Support
-
-For questions or issues:
-- 📖 Check [Documentation](docs/)
-- 🐛 Report bugs via GitHub Issues
-- 💬 Discussions: [Your Discussion Forum/Email]
-
----
-
-**Last Updated**: March 26, 2026  
-**Version**: 1.2.0
+<div align="center">
+<sub>IDxVPN · Multi-Layer VPN Detection & Deanonymisation · Final Year Research Project</sub>
+</div>
