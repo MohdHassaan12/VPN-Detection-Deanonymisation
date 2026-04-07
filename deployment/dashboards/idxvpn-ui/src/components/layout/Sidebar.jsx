@@ -1,7 +1,9 @@
 import React from 'react';
 import { LayoutDashboard, BarChart2, Shield, Settings, Activity, LogOut, User, Globe, Fingerprint, Layers, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
+import shieldLogo from '../../assets/idxvpn-shield-logo.png';
 
 const navItems = [
     { id: 'dashboard', label: 'Dashboard',                   icon: LayoutDashboard },
@@ -17,6 +19,7 @@ const navItems = [
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
 
     return (
         <div
@@ -31,21 +34,35 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
         >
             {/* ── Logo ── */}
             <div
-                className="p-6 flex items-center gap-3"
+                className="p-4 flex items-center gap-3 cursor-pointer group"
                 style={{ borderBottom: '1px solid var(--border)' }}
+                onClick={() => navigate('/welcome')}
+                title="Go to Welcome Page"
             >
+                {/* Shield logo image — cropped to just the shield center */}
                 <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white text-xs"
+                    className="w-10 h-10 rounded-xl overflow-hidden shrink-0 transition-transform group-hover:scale-105"
                     style={{
-                        background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
-                        boxShadow: '0 0 12px var(--accent-blue-glow)',
+                        boxShadow: '0 0 16px rgba(79,143,255,0.45)',
+                        border: '1px solid rgba(79,143,255,0.3)',
                     }}
                 >
-                    ID
+                    <img
+                        src={shieldLogo}
+                        alt="IDxVPN Logo"
+                        className="w-full h-full object-cover"
+                        style={{ objectPosition: '50% 40%', transform: 'scale(1.3)' }}
+                    />
                 </div>
-                <h1 className="text-lg font-bold tracking-wide" style={{ color: 'var(--text-primary)' }}>
-                    IDxVPN
-                </h1>
+                <div className="min-w-0">
+                    <h1
+                        className="text-base font-bold tracking-wide leading-tight transition-colors group-hover:text-[var(--accent-blue)]"
+                        style={{ color: 'var(--text-primary)' }}
+                    >
+                        IDxVPN
+                    </h1>
+                    <p className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>VPN Detection Platform</p>
+                </div>
             </div>
 
             {/* ── Nav ── */}
