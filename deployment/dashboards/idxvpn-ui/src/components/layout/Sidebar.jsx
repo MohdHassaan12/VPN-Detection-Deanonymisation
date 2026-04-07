@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, BarChart2, Shield, Settings, Activity, LogOut, User, Globe, Fingerprint, Layers } from 'lucide-react';
+import { LayoutDashboard, BarChart2, Shield, Settings, Activity, LogOut, User, Globe, Fingerprint, Layers, FileText } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
 
@@ -11,6 +11,7 @@ const navItems = [
     { id: 'policies',  label: 'Policies',                    icon: Shield },
     { id: 'detection', label: 'Interactive Detection',       icon: Activity },
     { id: 'architecture', label: 'Architecture',              icon: Layers },
+    { id: 'reports',      label: 'Reports & Threats',         icon: FileText },
     { id: 'settings',  label: 'Settings',                    icon: Settings },
 ];
 

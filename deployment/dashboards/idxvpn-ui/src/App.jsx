@@ -7,6 +7,7 @@ import IdentityProfiling from './components/detection/IdentityProfiling';
 import AnalyticsView from './components/analytics/AnalyticsView';
 import InteractiveSimulator from './components/detection/InteractiveSimulator';
 import ArchitectureView from './components/architecture/ArchitectureView';
+import ReportsView from './components/reports/ReportsView';
 import PoliciesView from './components/policies/PoliciesView';
 import SettingsView from './components/settings/SettingsView';
 import Login from './components/auth/Login';
@@ -36,6 +37,8 @@ function App() {
         return <InteractiveSimulator />;
       case 'architecture':
         return <ArchitectureView />;
+      case 'reports':
+        return <ReportsView />;
       case 'settings':
         return <SettingsView />;
       default:
