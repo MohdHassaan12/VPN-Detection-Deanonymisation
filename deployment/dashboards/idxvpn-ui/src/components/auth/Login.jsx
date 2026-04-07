@@ -101,24 +101,78 @@ const Login = () => {
                         </p>
                     </div>
 
-                    {/* Feature pills */}
-                    <div className="flex flex-col gap-3 animate-fade-in-up delay-200">
+                    {/* 4-Layer Architecture */}
+                    <div className="flex flex-col gap-2.5 animate-fade-in-up delay-200">
                         {[
-                            { icon: <Shield size={15}/>, label: 'Stage 1: CNN App Classifier', color: 'var(--accent-blue)' },
-                            { icon: <Wifi size={15}/>,   label: 'Stage 2: RF Intent Scorer',  color: 'var(--accent-purple)' },
-                            { icon: <Lock size={15}/>,   label: 'Stage 3: Policy Enforcer',   color: 'var(--accent-green)' },
-                        ].map(({ icon, label, color }) => (
+                            {
+                                num: '01',
+                                label: 'Edge Firewall',
+                                desc: 'IP Intelligence · MTU/MSS Fingerprinting',
+                                tag: '<10ms',
+                                icon: <Shield size={14}/>,
+                                color: 'var(--accent-blue)',
+                                tagColor: 'hsla(210,100%,60%,0.15)',
+                                tagBorder: 'hsla(210,100%,60%,0.30)',
+                            },
+                            {
+                                num: '02',
+                                label: 'TLS Termination',
+                                desc: 'Header Extraction · TLS Fingerprint Analysis',
+                                tag: '<5ms',
+                                icon: <Lock size={14}/>,
+                                color: 'var(--accent-purple)',
+                                tagColor: 'hsla(260,80%,65%,0.15)',
+                                tagBorder: 'hsla(260,80%,65%,0.30)',
+                            },
+                            {
+                                num: '03',
+                                label: 'ML Risk Scoring Engine',
+                                desc: 'Stage 1 CNN · Stage 2 Random Forest',
+                                tag: '~45ms',
+                                icon: <Wifi size={14}/>,
+                                color: 'var(--accent-orange)',
+                                tagColor: 'hsla(35,95%,58%,0.15)',
+                                tagBorder: 'hsla(35,95%,58%,0.30)',
+                            },
+                            {
+                                num: '04',
+                                label: 'Policy Engine',
+                                desc: 'ALLOW · CHALLENGE · BLOCK Enforcement',
+                                tag: '<1ms',
+                                icon: <AlertTriangle size={14}/>,
+                                color: 'var(--accent-green)',
+                                tagColor: 'hsla(152,70%,45%,0.15)',
+                                tagBorder: 'hsla(152,70%,45%,0.30)',
+                            },
+                        ].map(({ num, label, desc, tag, icon, color, tagColor, tagBorder }) => (
                             <div
                                 key={label}
-                                className="flex items-center gap-3 px-4 py-2.5 rounded-lg w-fit"
+                                className="flex items-center gap-3 px-4 py-3 rounded-xl"
                                 style={{
-                                    background: 'hsla(220,30%,100%,0.06)',
-                                    border: `1px solid hsla(220,30%,100%,0.10)`,
+                                    background: 'hsla(220,30%,100%,0.05)',
+                                    border: `1px solid hsla(220,30%,100%,0.09)`,
                                     backdropFilter: 'blur(8px)',
                                 }}
                             >
-                                <span style={{ color }}>{icon}</span>
-                                <span className="text-sm font-medium" style={{ color: 'hsl(215,20%,82%)' }}>{label}</span>
+                                <div
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                                    style={{ background: `${color}22`, color }}
+                                >
+                                    {icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-bold font-mono" style={{ color: `${color}` }}>L{num}</span>
+                                        <span className="text-sm font-semibold" style={{ color: 'hsl(215,20%,88%)' }}>{label}</span>
+                                    </div>
+                                    <div className="text-[11px] mt-0.5" style={{ color: 'hsl(215,16%,55%)' }}>{desc}</div>
+                                </div>
+                                <span
+                                    className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                                    style={{ background: tagColor, border: `1px solid ${tagBorder}`, color }}
+                                >
+                                    {tag}
+                                </span>
                             </div>
                         ))}
                     </div>
