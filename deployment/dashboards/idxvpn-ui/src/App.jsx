@@ -6,6 +6,7 @@ import CommandCenter from './components/detection/CommandCenter';
 import IdentityProfiling from './components/detection/IdentityProfiling';
 import AnalyticsView from './components/analytics/AnalyticsView';
 import InteractiveSimulator from './components/detection/InteractiveSimulator';
+import ArchitectureView from './components/architecture/ArchitectureView';
 import PoliciesView from './components/policies/PoliciesView';
 import SettingsView from './components/settings/SettingsView';
 import Login from './components/auth/Login';
@@ -33,6 +34,8 @@ function App() {
         return <PoliciesView />;
       case 'detection':
         return <InteractiveSimulator />;
+      case 'architecture':
+        return <ArchitectureView />;
       case 'settings':
         return <SettingsView />;
       default:
